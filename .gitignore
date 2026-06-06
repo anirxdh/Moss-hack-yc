@@ -1,0 +1,43 @@
+# ──────────────────────────────────────────────────────────────────────
+# Moss-hack-yc — keep competitive ideas & strategy OUT of git.
+# The platform reference docs, raw scrapes, audits, and the explainer
+# are shared; the ranked ideas and tournament verdict are not.
+# ──────────────────────────────────────────────────────────────────────
+
+# --- Competitive ideas / strategy (DO NOT publish) ---
+IDEAS.md
+ideas/
+TOURNAMENT-RESULTS.md
+PAIN-POINTS.md
+WINNING-PATTERNS.md
+
+# Auto-generated nav index — removed from the repo, kept locally only
+README.md
+
+# Battle-pack bundles — they embed the tournament Top 5 + all 60 ideas
+BATTLE-PACK.md
+BATTLE-PACK.pdf
+battle-pack-mobile.zip
+
+# Rendered "All 60 Ideas" page + its data
+site/projects.html
+site/ideas-data.js
+download/2-All-60-Ideas.html
+
+# --- Local tooling / machine config ---
+# Keep only the /moss skill from .claude (a reference deliverable); drop the rest
+/.claude/*
+!/.claude/skills/
+/.claude/skills/*
+!/.claude/skills/moss/
+
+.gstack/
+
+# --- OS / editor / misc junk ---
+.DS_Store
+*.log
+__pycache__/
+*.pyc
+.env
+.env.*
+node_modules/

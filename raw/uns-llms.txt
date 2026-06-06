@@ -1,0 +1,44 @@
+# Unsiloed AI
+
+> AI agents for Unstructured data
+
+## Docs
+
+- [Classify Document](https://docs.unsiloed.ai/api-reference/classification/classify-document.md): Classify PDF documents into predefined categories with confidence scoring using job-based processing
+- [Get Classification Result](https://docs.unsiloed.ai/api-reference/classification/get-classification-status.md): Check the status and progress of classification jobs and retrieve results
+- [Extract Data](https://docs.unsiloed.ai/api-reference/extraction/extract-data.md): Extract structured data from PDF documents using custom schemas
+- [Get Extraction Result](https://docs.unsiloed.ai/api-reference/jobs/results.md): Retrieve the results of a completed processing job
+- [Get Organization Usage](https://docs.unsiloed.ai/api-reference/organization/usage.md): Check your organization's current usage, limits, and remaining quota
+- [Get Parse Result](https://docs.unsiloed.ai/api-reference/parser/get-parse-job-status.md): Check the status and retrieve results of parsing jobs
+- [Parse Document](https://docs.unsiloed.ai/api-reference/parser/parse-document.md): Parse and segment PDFs, images, and Office files into meaningful sections using advanced AI models with flexible customization options.
+- [Parse Document (Presigned Upload)](https://docs.unsiloed.ai/api-reference/parser/parse-document-v2.md): Parse and segment PDFs, images, and Office files into meaningful sections using advanced AI models with flexible customization options.
+- [Parse Document (v3)](https://docs.unsiloed.ai/api-reference/parser/parse-document-v3.md): Async PDF parsing that returns markdown. Supports inline upload, public URL, presigned upload for large files, and archive-based batches — all under one endpoint with per-key isolation.
+- [Get Split Result](https://docs.unsiloed.ai/api-reference/splitting/get-split-status.md): Check the status and retrieve results of document splitting jobs
+- [Split Document](https://docs.unsiloed.ai/api-reference/splitting/split-document.md): Split PDF documents by classifying pages into different categories
+- [Classification Overview](https://docs.unsiloed.ai/document-processing/classification/classification.md): Route documents to predefined categories with a confidence score on every page.
+- [Getting Started With Classification](https://docs.unsiloed.ai/document-processing/classification/quickstart.md): Submit a document and a list of candidate categories to /classify, then read back the predicted category.
+- [Response Format](https://docs.unsiloed.ai/document-processing/classification/response-format.md): Response shape from the /classify endpoint, with examples for each job state.
+- [Extract Overview](https://docs.unsiloed.ai/document-processing/extraction/extraction.md): Pull typed fields out of a document using a JSON schema, with a confidence score on every value.
+- [Getting Started With Extract](https://docs.unsiloed.ai/document-processing/extraction/quickstart.md): Submit a document and a JSON schema to /v2/extract and read back typed fields with confidence scores.
+- [Response Format](https://docs.unsiloed.ai/document-processing/extraction/response-format.md): Response shape from the /v2/extract endpoint, with a field-by-field reference.
+- [Schemas](https://docs.unsiloed.ai/document-processing/extraction/schemas.md): JSON Schema rules and patterns for defining what /v2/extract should pull out of a document.
+- [Element Types](https://docs.unsiloed.ai/document-processing/parsing/element-types.md): The segment types returned by the /parse endpoint, with example response shapes pulled from real parsed documents.
+- [Parse Overview](https://docs.unsiloed.ai/document-processing/parsing/parsing.md): Turn documents into ordered Markdown chunks with bounding boxes, OCR, and labeled layout segments.
+- [Presigned URLs](https://docs.unsiloed.ai/document-processing/parsing/presigned-urls.md): Parse documents from a URL instead of uploading them in the request body.
+- [Processing Modes](https://docs.unsiloed.ai/document-processing/parsing/processing-modes.md): Preset parameter bundles for the /parse endpoint: Fast, Accurate, and Agentic.
+- [Response Format](https://docs.unsiloed.ai/document-processing/parsing/response-format.md): Canonical response shape from the /parse endpoint, with a field-by-field reference.
+- [Getting Started With Splitting](https://docs.unsiloed.ai/document-processing/splitting/quickstart.md): Submit a bundled PDF to /splitter and download one PDF per detected document.
+- [Response Format](https://docs.unsiloed.ai/document-processing/splitting/response-format.md): Response shape from the /splitter endpoint, with a field-by-field reference.
+- [Splitting Overview](https://docs.unsiloed.ai/document-processing/splitting/splitting.md): Split a bundled PDF into separate documents by category.
+- [General FAQ](https://docs.unsiloed.ai/faq/general.md): Frequently asked questions about Unsiloed AI's document processing platform
+- [](https://docs.unsiloed.ai/index.md)
+- [Claude Integration](https://docs.unsiloed.ai/integrations/claude-integration.md): Drop-in Anthropic tool-use schemas to give Claude structured access to Unsiloed's document processing API
+- [Quickstart](https://docs.unsiloed.ai/quickstart.md): Submit a document to the /parse endpoint and read back structured Markdown chunks.
+
+## OpenAPI Specs
+
+- [openapi-v1](https://docs.unsiloed.ai/api-reference/parser/openapi-v1.json)
+- [openapi-v3](https://docs.unsiloed.ai/api-reference/parser/openapi-v3.json)
+- [openapi-v2](https://docs.unsiloed.ai/api-reference/parser/openapi-v2.json)
+- [openapi](https://docs.unsiloed.ai/api-reference/openapi.json)
+- [sample_spec](https://docs.unsiloed.ai/tooling/tests/fixtures/sample_spec.json)

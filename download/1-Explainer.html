@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Your AI Phone Helper — Explained Simply</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#faf6ec;        /* warm cream background */
+    --card:#ffffff;
+    --ink:#1d2230;          /* near-black, high contrast */
+    --ink-soft:#535b6e;     /* secondary text, still dark enough to read */
+    --line:#ece4d4;
+    --line-2:#e0d8c6;
+    /* product colors — saturated & readable on cream */
+    --moss:#12a150;  --moss-bg:#e6f6ec;
+    --livekit:#1f6feb; --livekit-bg:#e7f0fe;
+    --minimax:#e23b6d; --minimax-bg:#fdeaf0;
+    --unsiloed:#c9760a; --unsiloed-bg:#fcf0dd;
+    --truefoundry:#7a4dff; --truefoundry-bg:#efe9ff;
+    --aws:#e2640f; --aws-bg:#fdebdd;
+    --display:"Baloo 2",system-ui,sans-serif;
+    --body:"Nunito",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:var(--body);
+    font-size:18.5px;
+    line-height:1.72;
+    color:var(--ink);
+    background:var(--paper);
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  /* soft dotted texture, very subtle */
+  body::before{
+    content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+    background:
+      radial-gradient(700px 500px at 85% -10%, rgba(18,161,80,.07), transparent 65%),
+      radial-gradient(700px 500px at 5% 8%, rgba(31,111,235,.05), transparent 65%),
+      radial-gradient(rgba(0,0,0,.035) 1.3px, transparent 1.3px) 0 0/26px 26px;
+  }
+  ::selection{background:var(--moss);color:#fff}
+  a{color:inherit;text-decoration:none}
+  strong,b{font-weight:800}
+
+  /* ---------- NAV ---------- */
+  nav{
+    position:sticky;top:0;z-index:50;
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    padding:13px clamp(16px,4vw,46px);
+    background:rgba(250,246,236,.86);
+    backdrop-filter:blur(10px);
+    border-bottom:2px solid var(--line-2);
+  }
+  .brand{font-family:var(--display);font-weight:800;font-size:17px;color:var(--ink);display:flex;align-items:center;gap:9px}
+  .brand .dot{width:11px;height:11px;border-radius:50%;background:var(--moss);box-shadow:0 0 0 4px var(--moss-bg)}
+  .navlinks{display:flex;gap:4px}
+  .navlinks a{font-family:var(--display);font-weight:600;font-size:14.5px;padding:7px 13px;border-radius:11px;color:var(--ink-soft);transition:.2s}
+  .navlinks a:hover{color:var(--ink);background:#fff}
+  @media(max-width:760px){.navlinks .navsec{display:none}}
+  @media(max-width:430px){nav{padding:11px 14px} .brand{font-size:14.5px} .navlinks a{font-size:13px;padding:6px 11px}}
+
+  /* ---------- LAYOUT ---------- */
+  .wrap{max-width:1080px;margin:0 auto;padding:0 clamp(18px,4vw,40px)}
+  section{padding:clamp(54px,8vw,104px) 0}
+  .step-label{display:inline-flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;font-size:15px;color:var(--moss);background:var(--moss-bg);padding:7px 15px;border-radius:999px;margin-bottom:20px}
+  .step-label .n{background:var(--moss);color:#fff;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:14px}
+  h2.sec{font-family:var(--display);font-weight:800;font-size:clamp(30px,5.2vw,50px);line-height:1.05;letter-spacing:-.01em;margin-bottom:14px;color:var(--ink)}
+  .lede{font-size:clamp(18px,2.1vw,22px);color:var(--ink-soft);max-width:60ch;line-height:1.6}
+  .lede b{color:var(--ink)}
+
+  /* ---------- HERO ---------- */
+  .hero{padding-top:clamp(40px,6vw,76px);padding-bottom:clamp(30px,5vw,60px)}
+  .kicker{font-family:var(--display);font-weight:700;font-size:16px;color:var(--moss);background:var(--moss-bg);display:inline-block;padding:7px 16px;border-radius:999px;margin-bottom:24px;opacity:0;animation:fadeUp .6s .05s forwards}
+  h1{font-family:var(--display);font-weight:800;font-size:clamp(38px,7.5vw,80px);line-height:1.0;letter-spacing:-.02em;color:var(--ink);margin-bottom:22px}
+  h1 span{display:block;opacity:0;animation:fadeUp .7s forwards}
+  h1 .l1{animation-delay:.10s}
+  h1 .l2{animation-delay:.20s;color:var(--moss)}
+  .herorow{display:flex;flex-wrap:wrap;gap:28px;align-items:center;justify-content:space-between}
+  .herotext{max-width:54ch;opacity:0;animation:fadeUp .8s .34s forwards}
+  .herotext p{font-size:clamp(18px,2.2vw,22px);color:var(--ink-soft);line-height:1.6}
+  .herotext .big{margin-top:18px;font-family:var(--display);font-weight:700;font-size:clamp(19px,2.3vw,24px);color:var(--ink);line-height:1.4;border-left:5px solid var(--moss);padding-left:16px}
+  .herochip{opacity:0;animation:fadeUp .8s .5s forwards;display:flex;flex-direction:column;gap:14px;align-items:center;background:var(--card);border:2px solid var(--line-2);border-radius:22px;padding:22px 26px;box-shadow:0 14px 36px -22px rgba(0,0,0,.3)}
+  .wave{display:flex;align-items:flex-end;gap:5px;height:48px}
+  .wave i{width:6px;border-radius:4px;background:var(--moss);animation:wave 1.05s ease-in-out infinite}
+  .wave i:nth-child(2){height:62%;animation-delay:.08s;background:var(--livekit)}
+  .wave i:nth-child(1){height:34%}
+  .wave i:nth-child(3){height:96%;animation-delay:.16s}
+  .wave i:nth-child(4){height:50%;animation-delay:.24s;background:var(--livekit)}
+  .wave i:nth-child(5){height:78%;animation-delay:.32s}
+  .wave i:nth-child(6){height:40%;animation-delay:.40s;background:var(--minimax)}
+  .wave i:nth-child(7){height:88%;animation-delay:.48s}
+  .wave i:nth-child(8){height:56%;animation-delay:.56s;background:var(--livekit)}
+  .latchip{font-family:var(--display);font-weight:700;font-size:15px;color:var(--moss);text-align:center}
+  .latchip b{font-size:22px}
+
+  /* ---------- BENTO ---------- */
+  .bento{display:grid;grid-template-columns:repeat(6,1fr);gap:15px;margin-top:34px}
+  .tile{
+    grid-column:span 2;background:var(--card);border:2px solid var(--line-2);border-radius:20px;padding:22px;cursor:pointer;
+    min-height:160px;display:flex;flex-direction:column;justify-content:space-between;
+    box-shadow:0 8px 22px -18px rgba(0,0,0,.4);
+    transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s,border-color .22s;
+    opacity:0;transform:translateY(14px);position:relative;overflow:hidden;
+  }
+  .tile::before{content:"";position:absolute;left:0;top:0;right:0;height:6px;background:var(--accent)}
+  .tile.in{opacity:1;transform:none}
+  .tile:hover{transform:translateY(-5px);border-color:var(--accent);box-shadow:0 18px 32px -20px var(--accent)}
+  .tile .organ{font-size:34px}
+  .tile .pname{font-family:var(--display);font-weight:800;font-size:19px;color:var(--accent);margin-top:4px}
+  .tile .role{font-size:16px;color:var(--ink);font-weight:600;line-height:1.35;margin-top:3px}
+  .tile .tag{position:absolute;top:18px;right:18px;font-family:var(--display);font-weight:700;font-size:11.5px;color:#fff;background:var(--accent);padding:4px 10px;border-radius:999px;opacity:.92}
+  .tile .more{font-family:var(--display);font-weight:700;font-size:13.5px;color:var(--accent);margin-top:10px;opacity:.85}
+  .tile.hero-tile{grid-column:span 3;grid-row:span 2;background:var(--moss-bg);border-color:var(--moss)}
+  .tile.hero-tile .organ{font-size:50px}
+  .tile.hero-tile .pname{font-size:30px}
+  .tile.hero-tile .role{font-size:19px}
+  .hero-tile .star{background:var(--moss)}
+  .hero-tile .blink{display:inline-flex;align-items:center;gap:9px;font-family:var(--display);font-weight:700;font-size:15px;color:var(--moss);margin-top:8px}
+  .hero-tile .blink .ring{width:13px;height:13px;border-radius:50%;background:var(--moss);animation:ring 1.8s infinite}
+  @media(max-width:880px){
+    .bento{grid-template-columns:repeat(2,1fr)}
+    .tile,.tile.hero-tile{grid-column:span 2;grid-row:auto}
+  }
+
+  /* DRAWER */
+  .drawer{margin-top:16px;border-radius:22px;overflow:hidden;max-height:0;opacity:0;transition:max-height .5s ease,opacity .35s,margin .35s}
+  .drawer.open{max-height:1500px;opacity:1}
+  .drawer-inner{background:var(--card);border:2px solid var(--accent);border-top-width:8px;border-radius:22px;padding:clamp(22px,3vw,36px)}
+  .drawer-head{display:flex;align-items:center;gap:15px;flex-wrap:wrap}
+  .drawer-head .organ{font-size:44px}
+  .drawer-head h3{font-family:var(--display);font-weight:800;font-size:clamp(26px,4vw,40px);color:var(--accent)}
+  .drawer-head .role{font-family:var(--display);font-weight:700;font-size:16px;color:var(--ink-soft)}
+  .drawer .story{font-size:clamp(17px,2vw,20px);color:var(--ink);margin:16px 0 4px;max-width:70ch;line-height:1.6}
+  .drawer .story b{color:var(--accent)}
+  .subh{font-family:var(--display);font-weight:800;font-size:15px;color:var(--ink-soft);margin:26px 0 13px;text-transform:none}
+  .uses{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+  @media(max-width:680px){.uses{grid-template-columns:1fr}}
+  .use{border:2px solid var(--line);border-radius:15px;padding:15px 17px;background:#fcfaf5}
+  .use b{font-family:var(--display);font-weight:800;font-size:15px;color:var(--accent)}
+  .use p{font-size:16px;color:var(--ink);margin-top:5px;line-height:1.5}
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:22px}
+  @media(max-width:680px){.twocol{grid-template-columns:1fr}}
+  .pill{border-radius:15px;padding:16px 18px;font-size:16px;line-height:1.5}
+  .pill b{font-family:var(--display);font-weight:800;font-size:14px;display:block;margin-bottom:6px}
+  .pill.not{border:2px solid #f3c0c0;background:#fdeeee;color:#a23b3b}
+  .pill.not b{color:#d24b4b}
+  .pill.rem{border:2px solid var(--accent);background:color-mix(in srgb,var(--accent) 9%,#fff);color:var(--ink)}
+  .pill.rem b{color:var(--accent)}
+  .hint{font-family:var(--display);font-weight:600;font-size:15px;color:var(--ink-soft);margin-top:14px}
+
+  /* ---------- LATENCY RACE ---------- */
+  .race{margin-top:32px;background:var(--card);border:2px solid var(--line-2);border-radius:24px;padding:clamp(22px,3.5vw,38px);box-shadow:0 16px 40px -28px rgba(0,0,0,.35)}
+  .lane{margin:20px 0}
+  .lane .lh{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:9px}
+  .lane .lh .who{font-family:var(--display);font-weight:700;font-size:16px}
+  .lane .lh .t{font-family:var(--display);font-weight:800;font-size:18px;font-variant-numeric:tabular-nums}
+  .lane.old .who,.lane.old .t{color:#d24b4b}
+  .lane.moss .who,.lane.moss .t{color:var(--moss)}
+  .track{height:20px;border-radius:999px;background:#efe9da;position:relative;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:999px}
+  .lane.old .fill{background:linear-gradient(90deg,#f08a8a,#d24b4b)}
+  .lane.moss .fill{background:linear-gradient(90deg,#4fcf86,#12a150)}
+  .silence{font-family:var(--display);font-weight:700;font-size:15.5px;margin-top:9px;min-height:20px}
+  .lane.old .silence{color:#d24b4b}
+  .lane.moss .silence{color:var(--moss)}
+  .raceBtn,.playBtn{font-family:var(--display);font-weight:800;font-size:16px;color:#fff;background:var(--moss);border:none;padding:13px 26px;border-radius:999px;cursor:pointer;transition:.18s;box-shadow:0 10px 22px -10px var(--moss);margin-top:6px}
+  .raceBtn:hover,.playBtn:hover{transform:translateY(-2px);filter:brightness(1.05)}
+  .racecap{font-size:17px;color:var(--ink-soft);margin-top:18px;max-width:62ch;line-height:1.6}
+  .racecap b{color:var(--ink);font-weight:800}
+
+  /* ---------- CALL ---------- */
+  .calltop{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;margin-top:28px}
+  .playBtn{background:var(--livekit);box-shadow:0 10px 22px -10px var(--livekit)}
+  .calltop .note{font-family:var(--display);font-weight:700;font-size:15px;color:var(--ink-soft)}
+  .calltop .note b{color:var(--ink)}
+  .calllane{margin-top:26px;position:relative;padding-left:30px}
+  .calllane::before{content:"";position:absolute;left:11px;top:8px;bottom:8px;width:3px;background:var(--line-2);border-radius:3px}
+  .step{position:relative;padding:13px 0 13px 8px;opacity:.4;transition:opacity .35s,transform .35s}
+  .step.live{opacity:1;transform:translateX(4px)}
+  .step.done{opacity:.7}
+  .step .node{position:absolute;left:-30px;top:16px;width:24px;height:24px;border-radius:50%;background:#fff;border:3px solid var(--line-2);display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:12px;color:var(--ink-soft);transition:.35s}
+  .step.live .node,.step.done .node{border-color:var(--accent);color:var(--accent);background:#fff}
+  .step.live .node{box-shadow:0 0 0 6px color-mix(in srgb,var(--accent) 16%,transparent)}
+  .step .chip{display:inline-flex;align-items:center;gap:8px;font-family:var(--display);font-weight:800;font-size:14px;color:#fff;background:var(--accent);border-radius:999px;padding:4px 13px;margin-bottom:7px}
+  .step .chip .ph{font-weight:700;font-size:12px;opacity:.85}
+  .step p{font-size:17px;color:var(--ink);max-width:72ch;line-height:1.55}
+  .step .said{font-weight:800;color:var(--accent)}
+  .wowline{margin-top:26px;border:2px solid var(--moss);background:var(--moss-bg);border-radius:18px;padding:18px 22px;font-size:17.5px;color:var(--ink);line-height:1.55}
+  .wowline b{font-family:var(--display);font-weight:800;font-size:15px;color:var(--moss);display:block;margin-bottom:5px}
+
+  /* ---------- GLOSSARY ---------- */
+  .gsearch{margin-top:22px;display:flex;align-items:center;gap:10px;border:2px solid var(--line-2);border-radius:999px;padding:12px 20px;max-width:400px;background:#fff}
+  .gsearch input{background:none;border:none;outline:none;color:var(--ink);font-family:var(--body);font-weight:600;font-size:16px;width:100%}
+  .gsearch input::placeholder{color:var(--ink-soft);opacity:.7}
+  .gsearch span{color:var(--moss);font-size:20px;font-weight:800}
+  .ggrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:24px}
+  @media(max-width:820px){.ggrid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:540px){.ggrid{grid-template-columns:1fr}}
+  .gcard{border:2px solid var(--line-2);border-radius:16px;padding:17px 18px;background:#fff;transition:.2s}
+  .gcard:hover{border-color:var(--livekit);transform:translateY(-3px)}
+  .gcard.hide{display:none}
+  .gcard .term{font-family:var(--display);font-weight:800;font-size:17px;color:var(--livekit)}
+  .gcard .def{font-size:16px;color:var(--ink);margin-top:5px;line-height:1.5}
+
+  /* ---------- RECAP ---------- */
+  .recap{background:var(--card);border:2px solid var(--line-2);border-radius:26px;padding:clamp(26px,4vw,46px);box-shadow:0 18px 44px -30px rgba(0,0,0,.35)}
+  .recap ul{list-style:none;display:grid;gap:13px;margin:20px 0}
+  .recap li{display:flex;gap:14px;align-items:center;font-size:18px;color:var(--ink);flex-wrap:wrap}
+  .recap li .chip{font-family:var(--display);font-weight:800;font-size:15px;color:#fff;background:var(--rc);padding:6px 14px;border-radius:999px;min-width:128px;text-align:center}
+  .recap .punch{font-family:var(--display);font-weight:700;font-size:clamp(19px,2.4vw,26px);color:var(--ink);margin-top:20px;border-left:6px solid var(--moss);padding-left:18px;line-height:1.4}
+  .cta{display:inline-flex;align-items:center;gap:10px;margin-top:26px;font-family:var(--display);font-weight:800;font-size:16px;color:#fff;background:var(--moss);padding:15px 28px;border-radius:999px;transition:.18s;box-shadow:0 12px 28px -12px var(--moss)}
+  .cta:hover{transform:translateY(-2px);filter:brightness(1.05)}
+
+  footer{padding:44px 0 64px;border-top:2px solid var(--line);text-align:center;font-family:var(--display);font-weight:600;font-size:15px;color:var(--ink-soft)}
+
+  .reveal{opacity:0;transform:translateY(22px);transition:opacity .6s,transform .6s}
+  .reveal.in{opacity:1;transform:none}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+  @keyframes wave{0%,100%{transform:scaleY(.5)}50%{transform:scaleY(1)}}
+  @keyframes ring{0%{box-shadow:0 0 0 0 rgba(18,161,80,.45)}70%{box-shadow:0 0 0 11px rgba(18,161,80,0)}100%{box-shadow:0 0 0 0 rgba(18,161,80,0)}}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.reveal,.tile,h1 span,.kicker,.herotext,.herochip{opacity:1!important;transform:none!important}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="brand"><span class="dot"></span> Your AI Phone Helper</div>
+  <div class="navlinks">
+    <a href="#parts" class="navsec">The 6 parts</a>
+    <a href="#speed" class="navsec">Why fast wins</a>
+    <a href="#call" class="navsec">Watch a call</a>
+    <a href="#glossary" class="navsec">Word list</a>
+    <a href="2-All-60-Ideas.html" style="color:#fff;background:var(--moss);box-shadow:0 6px 16px -8px var(--moss)">📂 All 60 Ideas →</a>
+  </div>
+</nav>
+
+<header class="hero wrap">
+  <div class="kicker">Moss × YC Hackathon · explained super simply</div>
+  <h1><span class="l1">An AI phone helper,</span><span class="l2">built from 6 simple parts.</span></h1>
+  <div class="herorow">
+    <div class="herotext">
+      <p>Imagine the best phone helper you've ever talked to. It needs ears, a voice, a brain, a memory, and a boss keeping it out of trouble. <b style="color:var(--ink)">Each company here builds one of those parts.</b></p>
+      <p class="big">The voice and the brain already got cheap and fast. The last slow bit was <span style="color:var(--moss)">looking things up.</span> Moss makes that instant — so the helper can talk <em>and</em> know real facts at the same time, with no awkward pause.</p>
+    </div>
+    <div class="herochip">
+      <div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="latchip">Moss looks up a fact in<br><b>6 milliseconds</b><br>faster than you can blink 👀</div>
+    </div>
+  </div>
+</header>
+
+<!-- PARTS -->
+<section id="parts" class="wrap">
+  <div class="step-label"><span class="n">1</span> The 6 parts</div>
+  <h2 class="sec">Tap any box to learn what it does</h2>
+  <p class="lede">Each box is one part of the helper. <b>Moss is the big green one</b> — the super-fast memory that makes the helper feel smart. Tap a box and the simple explanation opens up.</p>
+  <div class="bento" id="bento"></div>
+  <div class="drawer" id="drawer"><div class="drawer-inner" id="drawerInner"></div></div>
+  <p class="hint">👆 Tap a box for the full story, real examples, and what it does NOT do.</p>
+</section>
+
+<!-- SPEED -->
+<section id="speed" class="wrap">
+  <div class="step-label" style="color:var(--moss)"><span class="n">2</span> Why being fast is the whole point</div>
+  <h2 class="sec">The lookup race 🏁</h2>
+  <p class="lede">On a phone call, 2 seconds of silence feels like forever. Watch what happens when the helper needs to look something up — the old way vs. the Moss way. <b>Press play.</b></p>
+  <div class="race">
+    <div class="lane old">
+      <div class="lh"><span class="who">😴 Old way — phones a faraway computer</span><span class="t" id="oldT">0 ms</span></div>
+      <div class="track"><div class="fill" id="oldFill"></div></div>
+      <div class="silence" id="oldSil"></div>
+    </div>
+    <div class="lane moss">
+      <div class="lh"><span class="who">⚡ Moss — the notes are already in its head</span><span class="t" id="mossT">0 ms</span></div>
+      <div class="track"><div class="fill" id="mossFill"></div></div>
+      <div class="silence" id="mossSil"></div>
+    </div>
+    <button class="raceBtn" id="raceBtn">▶ Play the race</button>
+    <p class="racecap">Same question, same answer. The only difference is <b>where the notes live.</b> The old way phones a faraway computer (about 2,000 ms — a long, awkward "…hello?"). Moss keeps the notes right next to the brain, so a lookup is <b>a thought, not a phone call</b> — about 6 ms, no pause. <b>That "no waiting, and it just knew" feeling is the whole hackathon.</b></p>
+  </div>
+</section>
+
+<!-- CALL -->
+<section id="call" class="wrap">
+  <div class="step-label" style="color:var(--livekit);background:var(--livekit-bg)"><span class="n" style="background:var(--livekit)">3</span> One call, all 6 parts together</div>
+  <h2 class="sec">Watch a real call 🎬</h2>
+  <p class="lede">Dwayne is a repairman on a roof with greasy hands. He calls a help line. Press play and watch each part do its job, one by one.</p>
+  <div class="calltop">
+    <button class="playBtn" id="playBtn">▶ Play the call</button>
+    <span class="note">example idea: <b>GreaseHands</b> · Support</span>
+  </div>
+  <div class="calllane" id="calllane"></div>
+  <div class="wowline"><b>The wow 🤯</b> The helper named the exact manual page <em>and</em> remembered what Dwayne already tried 90 seconds ago — instantly, with no awkward pause. That "no waiting, and it just knew" feeling is <strong style="color:var(--moss)">Moss</strong>. Everything else is the body around it.</div>
+</section>
+
+<!-- GLOSSARY -->
+<section id="glossary" class="wrap">
+  <div class="step-label" style="color:var(--truefoundry);background:var(--truefoundry-bg)"><span class="n" style="background:var(--truefoundry)">4</span> Tricky words, made simple</div>
+  <h2 class="sec">Word list 📖</h2>
+  <p class="lede">Every fancy word you'll hear this weekend, in one plain sentence. Type to find one.</p>
+  <div class="gsearch"><span>🔍</span><input id="gsearch" placeholder="type a word… (like RAG, lag, token)" /></div>
+  <div class="ggrid" id="ggrid"></div>
+</section>
+
+<!-- RECAP -->
+<section id="recap" class="wrap">
+  <div class="step-label">✅ The 30-second recap</div>
+  <div class="recap">
+    <ul>
+      <li style="--rc:var(--moss)"><span class="chip">MOSS ⭐</span> The super-fast memory. Finds any fact in a blink — even offline, even while facts change. <b>The star.</b></li>
+      <li style="--rc:var(--livekit)"><span class="chip">LiveKit</span> The phone line + ears + good timing.</li>
+      <li style="--rc:var(--minimax)"><span class="chip">MiniMax</span> The voice — and it can copy a real person's voice.</li>
+      <li style="--rc:var(--unsiloed)"><span class="chip">Unsiloed</span> Reads giant PDFs ahead of time and files them as tidy notes.</li>
+      <li style="--rc:var(--truefoundry)"><span class="chip">TrueFoundry</span> The boss that keeps the brain safe, reliable & on-budget.</li>
+      <li style="--rc:var(--aws)"><span class="chip">AWS</span> The building it all runs in.</li>
+    </ul>
+    <p class="punch">Voices and brains got fast and cheap. Looking things up was the last slow part. Moss makes it instant — so an AI on the phone can finally chat <em>and</em> know real facts at once, with no awkward pause.</p>
+    <a class="cta" href="#parts">↑ Tap through the parts again — then go read IDEAS.md →</a>
+  </div>
+</section>
+
+<footer>Battle pack · /Users/anirudh/Desktop/yc-mosshack · made to make the stack click 🎙️</footer>
+
+<script>
+const PRODUCTS = [
+  {
+    id:'moss', hero:true, name:'MOSS', organ:'🧠', accent:'var(--moss)', tag:'⭐ THE STAR',
+    role:'The super-fast memory that finds any fact in a blink',
+    story:`Moss is a super-fast helper that finds the exact right fact from a huge pile of notes — <b>faster than you can blink</b> (under 10 milliseconds; a blink is about 100). Here's the trick: most apps have to phone a faraway computer to look something up, which takes a second or two of dead silence. Moss keeps all the notes <b>right inside the helper's head</b>, so looking something up is instant. It can even work with the internet turned off, and it can learn a new fact in the middle of a call.`,
+    uses:[
+      {n:'PolicyPulse', t:'Edit a rules page on screen, and the SAME live call instantly says the new rule. The knowledge changed mid-call.'},
+      {n:'Candle911', t:'A 911 helper hears "he\'s diabetic" early, and 35 seconds later reminds the dispatcher — instantly, with no database.'},
+      {n:'RxEcho', t:'Checks a big medicine book AND grandma\'s own pill list at the same time, in one breath.'},
+      {n:'Glasshouse', t:'Pulls a patient\'s file in 7 ms with the WiFi turned OFF — the private data never leaves the laptop.'},
+    ],
+    not:`It is NOT the brain (it finds facts, it doesn't think up sentences). It's not the voice. And it's not great at reading messy PDFs itself — that's Unsiloed's job.`,
+    rem:`the helper's super-fast memory that finds any fact instantly — even offline, even while the facts are changing.`
+  },
+  {
+    id:'livekit', name:'LIVEKIT', organ:'☎️', accent:'var(--livekit)', tag:'EARS + LINE',
+    role:'The phone line, the ears, and the good timing',
+    story:`LiveKit runs the actual phone call. It <b>hears you</b>, turns your words into text, knows <b>when you've finished talking</b> (so it doesn't cut you off), stops politely when you interrupt, and plays the answer back. This sounds easy but it's the hardest part of a voice bot — LiveKit does it all for you.`,
+    uses:[
+      {n:'SixtySecond', t:'You fill out a web form and LiveKit makes the AI call your real phone within 60 seconds.'},
+      {n:'Candle911', t:'LiveKit quietly listens to a live human call and pops the right info onto a screen — without ever speaking.'},
+      {n:'Every idea', t:'It answers the phone, hears the words, waits its turn, and plays the reply.'},
+    ],
+    not:`It's not the brain and not the knowledge. It's the phone line and the listening — the body, not the thoughts.`,
+    rem:`the phone line + ears + good timing that makes a real back-and-forth conversation work.`
+  },
+  {
+    id:'minimax', name:'MINIMAX', organ:'🗣️', accent:'var(--minimax)', tag:'THE VOICE',
+    role:'The voice (and it can copy a real person\'s voice)',
+    story:`The helper has decided what to say (as text). MiniMax <b>says it out loud</b> in a natural-sounding voice — many languages, even with emotion. Its party trick: give it about 15 seconds of someone talking, and it can speak anything in <b>that person's exact voice</b>.`,
+    uses:[
+      {n:'VoiceOfMine', t:'A man losing his voice to illness saves 30 seconds of it, so his AI can answer his grandkids in his own voice forever.'},
+      {n:'Doppel', t:'You chat at a booth for 15 seconds; an hour later your phone rings — and it\'s YOUR voice calling you back.'},
+      {n:'Every idea', t:'The brain writes the reply → MiniMax speaks it → LiveKit plays it on the call.'},
+    ],
+    not:`Big thing to know: MiniMax has NO ears. It does not turn speech into text and doesn't handle turn-taking — that's LiveKit. MiniMax is the mouth, not the ears.`,
+    rem:`the voice box — the natural (or copied) voice that says the answer out loud.`
+  },
+  {
+    id:'unsiloed', name:'UNSILOED', organ:'📚', accent:'var(--unsiloed)', tag:'THE READER',
+    role:'Reads the giant PDFs for you, ahead of time',
+    story:`Real company info is stuck in horrible 400-page PDFs — policies, manuals, contracts full of tables and tiny print. You can't just dump that mess into a search box. Unsiloed is the careful intern who <b>reads the whole thing</b> and rewrites it as neat, tidy notes Moss can store — and it remembers <b>which page</b> each note came from.`,
+    uses:[
+      {n:'GreaseHands', t:'The night before: Unsiloed reads a 600-page repair manual into tidy page-labeled notes → loaded into Moss → so the helper can later say "Page 214."'},
+      {n:'The classic combo', t:'Unsiloed reads & files → Moss stores & finds → the voice helper answers. Unsiloed is the prep; Moss is the live magic.'},
+    ],
+    not:`It is NOT instant — reading a big PDF takes a few minutes, so you do it ahead of time, never during the call. It also doesn't store, search, or speak.`,
+    rem:`the intern who reads the giant PDF beforehand and files it as neat, page-labeled notes.`
+  },
+  {
+    id:'truefoundry', name:'TRUEFOUNDRY', organ:'🧑‍💼', accent:'var(--truefoundry)', tag:'THE BOSS',
+    role:'The boss that keeps the brain safe & reliable',
+    story:`There are hundreds of AI "brains." You don't want to wire up each one, and you really don't want your bot to leak a private number, go silent because one brain crashed, or run up a surprise bill. TrueFoundry is the experienced boss behind the helper: <b>one door to every brain</b>, an instant backup if one breaks, automatic rules that hide private info, and a live receipt of what each call costs.`,
+    uses:[
+      {n:'Killswitch', t:'The demo kills the main brain live, mid-sentence — and the helper keeps talking, because TrueFoundry instantly switched to a backup brain.'},
+      {n:'Any serious idea', t:'It hides private info before it\'s spoken, and shows a live cost + speed dashboard that screams "this is production-ready."'},
+    ],
+    not:`It's not the brain itself — it's the boss OF the brains. It doesn't hear, speak, or remember. It manages.`,
+    rem:`the boss + switchboard that keeps the brain safe, reliable, and on-budget.`
+  },
+  {
+    id:'aws', name:'AWS', organ:'🏢', accent:'var(--aws)', tag:'THE BUILDING',
+    role:'The building (the cloud) it all runs in',
+    story:`AWS is the cloud — rented computers on the internet where all your software actually runs — plus free credits for the hackathon. You don't "show off AWS"; it's just the building everything sits inside. It also offers its own brain, ears, and voice as backups if you want them.`,
+    uses:[
+      {n:'Every idea', t:'It\'s where you put the app so it\'s online during the demo, and where the notes and audio live.'},
+    ],
+    not:`It's not a feature you demo — it's the power and walls underneath. Use the credits, put the app online, move on.`,
+    rem:`the building / power supply the whole helper runs inside.`
+  },
+];
+
+const CALL = [
+  {ph:'the night before', who:'Unsiloed', accent:'var(--unsiloed)', text:'reads the 600-page repair manual and turns it into 4,000 tidy, page-labeled notes.'},
+  {ph:'the night before', who:'Moss', accent:'var(--moss)', text:'loads those notes into its memory, ready to find any of them in a blink.'},
+  {ph:'2:00 PM · rooftop', who:'LiveKit', accent:'var(--livekit)', text:'answers the phone and turns Dwayne\'s words into text: <span class="said">"I\'m getting error E4 on a Carrier 48TC."</span>'},
+  {ph:'2:00 PM · rooftop', who:'LiveKit', accent:'var(--livekit)', text:'notices he\'s finished talking, and passes the words along.'},
+  {ph:'instant', who:'Moss', accent:'var(--moss)', text:'finds two things at once in 6 ms: the manual note for "error E4" AND the memory that <span class="said">Dwayne already restarted the board 90 seconds ago.</span>'},
+  {ph:'thinking', who:'TrueFoundry → Brain', accent:'var(--truefoundry)', text:'the brain (reached safely through the boss, kept online and on-budget) turns those facts into a helpful answer.'},
+  {ph:'speaking', who:'MiniMax', accent:'var(--minimax)', text:'says it in a calm voice: <span class="said">"Page 214 — high-pressure lockout. Since you already restarted the board, check the fan you said was noisy."</span>'},
+  {ph:'the call', who:'LiveKit', accent:'var(--livekit)', text:'plays it down the phone line. Dwayne fixes it without ever touching a laptop.'},
+];
+
+const GLOSSARY = [
+  ['Retrieval','Looking up the right fact from a pile of notes. Moss does this super fast.'],
+  ['RAG','Letting the AI look stuff up before it answers, so it doesn\'t make things up. A cheat sheet before it talks.'],
+  ['Latency / lag','The delay before you hear an answer. Low = snappy. High = awkward silence.'],
+  ['Index','An organized, searchable pile of notes.'],
+  ['Embedding','A math trick that lets a computer find things by meaning, not exact words. You don\'t need to know how.'],
+  ['Semantic search','Searching by meaning ("cracked screen" finds "shattered display"), not exact words.'],
+  ['STT (speech-to-text)','Ears: spoken words → written text. (LiveKit + a partner.)'],
+  ['TTS (text-to-speech)','Mouth: written text → spoken audio. (MiniMax.)'],
+  ['LLM','The "brain" — the AI that reads and writes language (GPT, Claude, MiniMax…).'],
+  ['Token','A small chunk of text the brain reads/writes; brains are billed per token.'],
+  ['Turn detection','Knowing when YOU stopped talking, so the AI can reply and not cut you off.'],
+  ['Barge-in','You talking over the AI, and it politely stopping.'],
+  ['On-device','Running on your own laptop/phone, so private data never leaves it.'],
+  ['Hot-swap','Updating the notes live, mid-call, with no restart.'],
+  ['Session','The AI\'s memory of THIS conversation, built as you talk.'],
+  ['Gateway','One front-door that connects to many AI brains (TrueFoundry).'],
+  ['Guardrail','An automatic rule that stops the AI from saying something it shouldn\'t.'],
+  ['Telephony','The tech for making and getting real phone calls.'],
+];
+
+/* RENDER: PARTS */
+const bento=document.getElementById('bento');
+PRODUCTS.forEach(p=>{
+  const t=document.createElement('div');
+  t.className='tile'+(p.hero?' hero-tile':'');
+  t.style.setProperty('--accent',p.accent);
+  t.dataset.id=p.id;
+  t.innerHTML = p.hero
+    ? `<span class="tag star">${p.tag}</span>
+       <div><div class="organ">${p.organ}</div><div class="pname">${p.name}</div><div class="role">${p.role}</div></div>
+       <div class="blink"><span class="ring"></span> finds a fact in about 6 ms</div>`
+    : `<span class="tag">${p.tag}</span>
+       <div class="organ">${p.organ}</div>
+       <div><div class="pname">${p.name}</div><div class="role">${p.role}</div><div class="more">tap to learn →</div></div>`;
+  t.addEventListener('click',()=>openDrawer(p.id));
+  bento.appendChild(t);
+});
+const drawer=document.getElementById('drawer'),drawerInner=document.getElementById('drawerInner');
+let openId=null;
+function openDrawer(id){
+  const p=PRODUCTS.find(x=>x.id===id);
+  if(openId===id){drawer.classList.remove('open');openId=null;return;}
+  openId=id;
+  drawerInner.style.setProperty('--accent',p.accent);
+  drawerInner.innerHTML=`
+    <div class="drawer-head"><span class="organ">${p.organ}</span><div><h3>${p.name}</h3><div class="role">${p.role}</div></div></div>
+    <p class="story">${p.story}</p>
+    <div class="subh">↳ How real ideas use it</div>
+    <div class="uses">${p.uses.map(u=>`<div class="use"><b>${u.n}</b><p>${u.t}</p></div>`).join('')}</div>
+    <div class="twocol">
+      <div class="pill not"><b>✕ What it does NOT do</b>${p.not}</div>
+      <div class="pill rem"><b>◆ Remember it as…</b>${p.rem}</div>
+    </div>`;
+  drawer.classList.add('open');
+  setTimeout(()=>drawer.scrollIntoView({behavior:'smooth',block:'center'}),120);
+}
+
+/* RENDER: CALL */
+const calllane=document.getElementById('calllane');
+CALL.forEach((s,i)=>{
+  const d=document.createElement('div');
+  d.className='step';d.style.setProperty('--accent',s.accent);
+  d.innerHTML=`<div class="node">${i+1}</div><div class="chip"><span class="ph">${s.ph}</span> · ${s.who}</div><p>${s.text}</p>`;
+  calllane.appendChild(d);
+});
+const steps=[...calllane.children];let playing=false;
+document.getElementById('playBtn').addEventListener('click',function(){
+  if(playing)return;playing=true;this.textContent='⏸ playing…';
+  steps.forEach(s=>s.classList.remove('live','done'));let i=0;
+  const adv=()=>{
+    if(i>0)steps[i-1].classList.replace('live','done');
+    if(i>=steps.length){playing=false;document.getElementById('playBtn').textContent='↻ Replay the call';return;}
+    steps[i].classList.add('live');steps[i].scrollIntoView({behavior:'smooth',block:'center'});
+    i++;setTimeout(adv,1500);
+  };adv();
+});
+
+/* RENDER: GLOSSARY */
+const ggrid=document.getElementById('ggrid');
+GLOSSARY.forEach(([term,def])=>{
+  const c=document.createElement('div');c.className='gcard';c.dataset.k=(term+' '+def).toLowerCase();
+  c.innerHTML=`<div class="term">${term}</div><div class="def">${def}</div>`;ggrid.appendChild(c);
+});
+document.getElementById('gsearch').addEventListener('input',e=>{
+  const q=e.target.value.toLowerCase().trim();
+  [...ggrid.children].forEach(c=>c.classList.toggle('hide',q&&!c.dataset.k.includes(q)));
+});
+
+/* LATENCY RACE */
+const oldFill=document.getElementById('oldFill'),mossFill=document.getElementById('mossFill');
+const oldT=document.getElementById('oldT'),mossT=document.getElementById('mossT');
+const oldSil=document.getElementById('oldSil'),mossSil=document.getElementById('mossSil');
+let racing=false;
+document.getElementById('raceBtn').addEventListener('click',function(){
+  if(racing)return;racing=true;this.textContent='running…';
+  oldFill.style.transition='none';mossFill.style.transition='none';
+  oldFill.style.width='0';mossFill.style.width='0';oldT.textContent='0 ms';mossT.textContent='0 ms';oldSil.textContent='';mossSil.textContent='';
+  setTimeout(()=>{
+    mossFill.style.transition='width .12s linear';mossFill.style.width='100%';
+    let m=0;const mi=setInterval(()=>{m++;mossT.textContent=m+' ms';if(m>=6){clearInterval(mi);mossT.textContent='6 ms ✓';mossSil.textContent='✓ instant — no pause. The helper just knew.';}},18);
+  },60);
+  setTimeout(()=>{
+    oldFill.style.transition='width 2s linear';oldFill.style.width='100%';
+    let o=0;const oi=setInterval(()=>{o+=40;if(o>2000)o=2000;oldT.textContent=o+' ms';
+      if(o>250&&o<2000)oldSil.textContent='…awkward silence… "…hello?"';
+      if(o>=2000){clearInterval(oi);oldT.textContent='2000 ms ✗';oldSil.textContent='✗ two seconds of dead air — feels broken.';racing=false;document.getElementById('raceBtn').textContent='↻ Replay the race';}
+    },40);
+  },60);
+});
+
+/* REVEALS */
+const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:.12});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+const tio=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){[...bento.children].forEach((t,i)=>setTimeout(()=>t.classList.add('in'),i*60));tio.disconnect();}});},{threshold:.08});
+tio.observe(bento);
+</script>
+</body>
+</html>
