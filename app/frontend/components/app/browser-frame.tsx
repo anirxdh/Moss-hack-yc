@@ -1,3 +1,4 @@
+import { Lock } from 'lucide-react';
 import { cn } from '@/lib/shadcn/utils';
 
 /**
@@ -7,7 +8,7 @@ import { cn } from '@/lib/shadcn/utils';
  */
 export function BrowserFrame({
   children,
-  url = 'moss · your ai cpa',
+  url = 'app.moss.cpa',
   className,
 }: {
   children: React.ReactNode;
@@ -25,8 +26,9 @@ export function BrowserFrame({
         <span className="size-3 rounded-full bg-[#FF5F57]" />
         <span className="size-3 rounded-full bg-[#FEBC2E]" />
         <span className="size-3 rounded-full bg-[#28C840]" />
-        <div className="bg-background text-muted-foreground ml-4 flex-1 rounded-md px-3 py-1 text-center text-xs">
-          {url}
+        <div className="bg-background text-muted-foreground ml-4 flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1 text-xs">
+          <Lock className="size-3 shrink-0 opacity-50" strokeWidth={2.5} aria-hidden="true" />
+          <span className="font-mono tracking-tight">{url}</span>
         </div>
       </div>
       <div>{children}</div>
