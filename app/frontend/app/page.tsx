@@ -1,10 +1,10 @@
 import { headers } from 'next/headers';
-import { App } from '@/components/app/app';
+import { LandingView } from '@/components/app/landing-view';
 import { getAppConfig } from '@/lib/utils';
 
 export default async function Page() {
   const hdrs = await headers();
   const appConfig = await getAppConfig(hdrs);
 
-  return <App appConfig={appConfig} />;
+  return <LandingView companyName={appConfig.companyName} />;
 }
