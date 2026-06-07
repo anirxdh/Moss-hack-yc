@@ -11,7 +11,7 @@ import { CORE_DOCS, OPTIONAL_CATEGORIES } from './tax-documents';
 export function UploadView() {
   const router = useRouter();
   const [files, setFiles] = useState<Record<string, File>>({});
-  // Per-slot upload status + a global "uploading" flag for the action bar.
+  // Per-slot upload status + a global "busy" flag for the action bar.
   const [statuses, setStatuses] = useState<Record<string, UploadStatus>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [uploading, setUploading] = useState(false);
@@ -30,8 +30,39 @@ export function UploadView() {
   const doneCount = Object.values(statuses).filter((s) => s === 'done').length;
   const errorIds = Object.keys(errors);
 
-  // Upload every picked document to S3 (which triggers background ingestion),
-  // then continue to the return. With nothing picked, just proceed.
+  // Generate the 1040 from the same documents. The endpoint reads the PDFs,
+  // computes the return, fills the official IRS 1040, uploads it to S3, and
+  // indexes it (via the existing ingest service) so the voice CPA can ground on
+  // it. Best-effort: a generation hiccup shouldn't block reaching /return.
+  async function generate1040() {
+    try {
+      const fd = new FormData();
+      for (const [id, file] of Object.entries(files)) {
+        fd.append('files', file);
+        fd.append('docIds', id);
+      }
+      const res = await fetch('/api/generate-1040', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!data?.bypassed && data?.pdfBase64) {
+        sessionStorage.setItem(
+          'generated1040',
+          JSON.stringify({
+            summary: data.summary,
+            pdfBase64: data.pdfBase64,
+            warnings: data.warnings ?? [],
+          })
+        );
+      } else {
+        sessionStorage.removeItem('generated1040');
+      }
+    } catch {
+      sessionStorage.removeItem('generated1040');
+    }
+  }
+
+  // Upload every picked document to S3 (which triggers background ingestion of
+  // the sources), then generate + index the 1040, then continue to the return.
+  // With nothing picked, just proceed.
   async function handleGenerate() {
     if (uploading) return;
     if (totalFiles === 0) {
@@ -51,12 +82,16 @@ export function UploadView() {
       },
     });
 
-    setUploading(false);
-    // Proceed only if every file landed; otherwise keep the user here to retry
-    // the ones that failed (their state is preserved).
-    if (Object.keys(failed).length === 0) {
-      router.push('/return');
+    // Keep the user here to retry if any source failed to upload.
+    if (Object.keys(failed).length > 0) {
+      setUploading(false);
+      return;
     }
+
+    await generate1040();
+
+    setUploading(false);
+    router.push('/return');
   }
 
   return (
@@ -134,7 +169,7 @@ export function UploadView() {
         <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-4 px-6 py-4">
           <span className="text-muted-foreground text-xs" aria-live="polite">
             {uploading
-              ? `Uploading ${doneCount}/${totalFiles}…`
+              ? `Working ${doneCount}/${totalFiles}…`
               : errorIds.length > 0
                 ? `${errorIds.length} couldn't upload — tap to retry`
                 : totalFiles === 0
@@ -147,7 +182,7 @@ export function UploadView() {
             disabled={uploading}
             className="rounded-full font-mono text-xs font-bold tracking-wider uppercase"
           >
-            {uploading ? 'Uploading…' : 'Generate 1040'}
+            {uploading ? 'Generating…' : 'Generate 1040'}
           </Button>
         </div>
       </div>
