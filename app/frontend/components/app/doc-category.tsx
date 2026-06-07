@@ -34,7 +34,9 @@ export function DocCategorySection({
         aria-expanded={open}
         className="hover:bg-card/60 flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors"
       >
-        <span className="text-lg leading-none">{category.icon}</span>
+        <span className="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-lg">
+          <category.icon className="size-[18px]" strokeWidth={1.75} aria-hidden="true" />
+        </span>
         <span className="flex-1">
           <span className="block text-sm font-semibold">{category.name}</span>
           <span className="text-muted-foreground block text-xs">{category.blurb}</span>

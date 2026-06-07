@@ -44,3 +44,6 @@ next-env.d.ts
 # local-only: uploaded tax PDF served at /tax-return.pdf (PII — never commit)
 /public/tax-return.pdf
 /public/*.pdf
+
+# local-only: large landing background video (drop nature.mp4 in public/)
+/public/*.mp4

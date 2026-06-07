@@ -1,5 +1,7 @@
 // US tax-filing document taxonomy for the upload step.
 // CORE_DOCS are shown by default; OPTIONAL_CATEGORIES expand on demand.
+import type { LucideIcon } from 'lucide-react';
+import { Briefcase, GraduationCap, HeartPulse, Home, PiggyBank, Users } from 'lucide-react';
 
 export interface TaxDoc {
   id: string;
@@ -10,7 +12,7 @@ export interface TaxDoc {
 
 export interface DocCategory {
   id: string;
-  icon: string; // emoji marker
+  icon: LucideIcon;
   name: string;
   blurb: string;
   docs: TaxDoc[];
@@ -53,7 +55,7 @@ export const CORE_DOCS: TaxDoc[] = [
 export const OPTIONAL_CATEGORIES: DocCategory[] = [
   {
     id: 'home',
-    icon: '🏠',
+    icon: Home,
     name: 'Home & deductions',
     blurb: 'Mortgage, property, and giving.',
     docs: [
@@ -85,7 +87,7 @@ export const OPTIONAL_CATEGORIES: DocCategory[] = [
   },
   {
     id: 'education',
-    icon: '🎓',
+    icon: GraduationCap,
     name: 'Education',
     blurb: 'Tuition and student loans.',
     docs: [
@@ -100,7 +102,7 @@ export const OPTIONAL_CATEGORIES: DocCategory[] = [
   },
   {
     id: 'health',
-    icon: '🏥',
+    icon: HeartPulse,
     name: 'Health & HSA',
     blurb: 'Coverage and health savings.',
     docs: [
@@ -121,7 +123,7 @@ export const OPTIONAL_CATEGORIES: DocCategory[] = [
   },
   {
     id: 'retirement',
-    icon: '🧓',
+    icon: PiggyBank,
     name: 'Retirement & benefits',
     blurb: 'Distributions and government income.',
     docs: [
@@ -147,7 +149,7 @@ export const OPTIONAL_CATEGORIES: DocCategory[] = [
   },
   {
     id: 'business',
-    icon: '💼',
+    icon: Briefcase,
     name: 'Business & rental',
     blurb: 'Side business and property income.',
     docs: [
@@ -169,7 +171,7 @@ export const OPTIONAL_CATEGORIES: DocCategory[] = [
   },
   {
     id: 'family',
-    icon: '👶',
+    icon: Users,
     name: 'Family & other',
     blurb: 'Dependents and contributions.',
     docs: [
