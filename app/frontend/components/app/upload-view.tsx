@@ -50,7 +50,7 @@ export function UploadView() {
             summary: data.summary,
             pdfBase64: data.pdfBase64,
             warnings: data.warnings ?? [],
-          }),
+          })
         );
       } else {
         sessionStorage.removeItem('generated1040');
