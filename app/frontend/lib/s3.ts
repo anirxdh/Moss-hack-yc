@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
+// eslint-disable-next-line import/no-unresolved -- `server-only` ships an exports map the import resolver can't follow; it resolves fine at build/runtime.
 import 'server-only';
-import { S3Client } from '@aws-sdk/client-s3';
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { type PresignedPost, createPresignedPost } from '@aws-sdk/s3-presigned-post';
 
 // Server-only S3 helpers for the document-upload flow. The browser uploads
@@ -88,4 +89,32 @@ export async function presignUpload({
     Expires: PRESIGN_TTL_SECONDS,
   });
   return { key, post };
+}
+
+/**
+ * Key for a server-generated artifact (e.g. the filled 1040). Lives under the
+ * user's own prefix in a dedicated `generated/` folder so the same per-user
+ * retrieval filter and ingest seam apply as for uploaded source docs.
+ */
+export function buildGeneratedKey(userId: string, filename = '1040.pdf'): string {
+  return `users/${userId}/generated/${randomUUID()}-${slugify(filename)}`;
+}
+
+/**
+ * Upload bytes to S3 from the server (used for the generated 1040 — the browser
+ * never holds these bytes, so the presigned-POST path doesn't apply here).
+ */
+export async function putObject(
+  key: string,
+  body: Uint8Array,
+  contentType = 'application/pdf'
+): Promise<void> {
+  await client().send(
+    new PutObjectCommand({
+      Bucket: BUCKET,
+      Key: key,
+      Body: body,
+      ContentType: contentType,
+    })
+  );
 }

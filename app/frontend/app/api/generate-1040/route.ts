@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { aggregate, computeForm1040, summarize } from './_lib/compute';
 import { type UploadedDoc, extractDocuments } from './_lib/extract';
 import { fillForm1040 } from './_lib/fill-1040';
+import { persistGenerated1040 } from './_lib/persist';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -69,7 +70,20 @@ export async function POST(req: Request) {
     const pdfBase64 = Buffer.from(pdfBytes).toString('base64');
     const summary = summarize(form1040, result.documents.length);
 
-    return NextResponse.json({ bypassed: false, summary, pdfBase64, warnings });
+    // Upload the finished 1040 to S3 and index it (Unsiloed -> Moss) via the
+    // existing ingest service, so the voice CPA can ground on the return.
+    // Best-effort: failures degrade to warnings; the PDF is still returned.
+    const persisted = await persistGenerated1040(pdfBytes);
+    warnings.push(...persisted.warnings);
+
+    return NextResponse.json({
+      bypassed: false,
+      summary,
+      pdfBase64,
+      s3Key: persisted.s3Key,
+      indexed: persisted.indexed,
+      warnings,
+    });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Failed to generate 1040.', warnings },
