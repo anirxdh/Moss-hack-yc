@@ -35,6 +35,11 @@ UNSILOED_BASE = "https://prod.visionapi.unsiloed.ai"
 DEFAULT_PDF = os.getenv("TAX_PDF_PATH", str(AGENT_DIR / "data" / "tax_return.pdf"))
 MODEL_ID = os.getenv("MOSS_MODEL_ID", "moss-minilm")
 INDEX_NAME = os.getenv("MOSS_INDEX_NAME", "knowledge")
+# The shared `knowledge` index is multi-user; this return is tagged with a
+# user_id (option B). Default matches the agent's console fallback so a local
+# demo "just works". The browser passes a real per-user id via dispatch metadata
+# (set DEMO_USER_ID in the frontend to pin it to this value for a demo).
+DEFAULT_INGEST_USER = "user_1"
 POLL_DEADLINE_S = 1800
 POLL_EVERY_S = 5
 
@@ -98,8 +103,15 @@ def poll_job(job_id: str, api_key: str) -> list[dict]:
     raise TimeoutError(f"parse polling timed out after {POLL_DEADLINE_S}s")
 
 
-def chunks_to_docs(chunks: list[dict]) -> list[DocumentInfo]:
-    """Turn Unsiloed chunks into Moss documents. Prefer chunk['embed'] (Markdown)."""
+def chunks_to_docs(chunks: list[dict], user_id: str) -> list[DocumentInfo]:
+    """Turn Unsiloed chunks into Moss documents for a specific user.
+
+    The `knowledge` index is shared across users (option B), so every chunk is
+    tagged with `user_id` and given a user-namespaced id (`{user_id}-chunk-{i}`).
+    The agent's search_knowledge filters by this `user_id`, so users never see
+    each other's returns. Re-ingesting the same user upserts by id (replacing
+    their docs) without touching anyone else's.
+    """
     docs: list[DocumentInfo] = []
     for i, ch in enumerate(chunks):
         text = (ch.get("embed") or "").strip()
@@ -116,13 +128,18 @@ def chunks_to_docs(chunks: list[dict]) -> list[DocumentInfo]:
             None,
         )
         types = sorted({s["segment_type"] for s in segs if s.get("segment_type")})
-        cid = ch.get("chunk_id") or f"chunk-{i}"
-        meta = {"source": "2025_tax_return", "chunk_index": str(i)}
+        meta = {
+            "user_id": user_id,
+            "source": "2025_tax_return",
+            "chunk_index": str(i),
+        }
+        if ch.get("chunk_id"):
+            meta["chunk_id"] = str(ch["chunk_id"])
         if page is not None:
             meta["page"] = str(page)
         if types:
             meta["types"] = ",".join(types)[:200]
-        docs.append(DocumentInfo(id=str(cid), text=text, metadata=meta))
+        docs.append(DocumentInfo(id=f"{user_id}-chunk-{i}", text=text, metadata=meta))
     return docs
 
 
@@ -147,26 +164,34 @@ async def main() -> None:
         print(f"[1/3] Parsing with Unsiloed: {Path(pdf_path).name}")
         job_id = submit_parse(pdf_path, api_key)
         chunks = poll_job(job_id, api_key)
-    docs = chunks_to_docs(chunks)
-    print(f"[2/3] Prepared {len(docs)} Moss docs from {len(chunks)} chunks.")
+    user_id = os.getenv("INGEST_USER_ID", DEFAULT_INGEST_USER)
+    docs = chunks_to_docs(chunks, user_id)
+    print(
+        f"[2/3] Prepared {len(docs)} Moss docs for user '{user_id}' "
+        f"from {len(chunks)} chunks."
+    )
     if not docs:
         raise SystemExit("No usable text parsed from the PDF.")
 
     client = MossClient(project_id, project_key)
-    # Replace any existing index so re-runs are clean (best-effort delete).
+    # Option B: the `knowledge` index is SHARED across users. Add only THIS
+    # user's docs (user-namespaced ids upsert their own chunks) so other users'
+    # returns are never disturbed. The index must already exist — create it once
+    # with: create_index.py knowledge.
+    print(
+        f"[3/3] Upserting {len(docs)} docs for user '{user_id}' "
+        f"into shared index '{INDEX_NAME}'..."
+    )
     try:
-        await client.delete_index(INDEX_NAME)
-        print(f"      (removed existing '{INDEX_NAME}' index)")
-    except Exception as exc:  # index may not exist yet
-        print(f"      (no existing '{INDEX_NAME}' to remove: {type(exc).__name__})")
-
-    print(
-        f"[3/3] Building Moss index '{INDEX_NAME}' ({len(docs)} docs, model {MODEL_ID})..."
-    )
-    result = await client.create_index(INDEX_NAME, docs, MODEL_ID)
-    print(
-        f"      done (job: {result.job_id}, index: {result.index_name}, docs: {result.doc_count})"
-    )
+        await client.load_index(INDEX_NAME)
+    except Exception as exc:
+        raise SystemExit(
+            f"Index '{INDEX_NAME}' not found. Create it once first:\n"
+            f"  uv --directory agent-py run src/create_index.py knowledge"
+        ) from exc
+    await client.add_docs(INDEX_NAME, docs)
+    await client.load_index(INDEX_NAME)  # reload so the new docs are queryable
+    print(f"      upserted {len(docs)} docs (other users' returns untouched).")
 
     # Smoke query (counts + latency only; no document text printed).
     print("Verifying retrieval...")
@@ -178,7 +203,10 @@ async def main() -> None:
             r = await client.query(
                 INDEX_NAME,
                 "total income wages and taxes withheld",
-                QueryOptions(top_k=3),
+                QueryOptions(
+                    top_k=3,
+                    filter={"field": "user_id", "condition": {"$eq": user_id}},
+                ),
             )
             rdocs = getattr(r, "docs", None) or []
             hits = len(rdocs)
@@ -195,8 +223,8 @@ async def main() -> None:
             print(f"  (warming, attempt {attempt + 1}: {type(exc).__name__})")
         time.sleep(3)
     if not hits:
-        print("  index created but smoke query returned 0 (may still be building).")
-    print("DONE. The 'knowledge' index now holds your tax document.")
+        print("  index updated but smoke query returned 0 (may still be building).")
+    print(f"DONE. The '{INDEX_NAME}' index now holds user '{user_id}'s tax document.")
 
 
 if __name__ == "__main__":

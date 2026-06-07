@@ -17,6 +17,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -26,26 +27,34 @@ from moss import DocumentInfo, MossClient
 # current working directory. ``src/create_index.py`` -> parent.parent == agent-py/.
 AGENT_DIR = Path(__file__).resolve().parent.parent
 KNOWLEDGE_PATH = AGENT_DIR / "knowledge.json"
+TAXCODE_PATH = AGENT_DIR / "taxcode.json"
 ENV_PATH = AGENT_DIR / ".env.local"
 
 DEFAULT_MODEL_ID = "moss-minilm"
 DEFAULT_KNOWLEDGE_INDEX = "knowledge"
 DEFAULT_MEMORY_INDEX = "memory"
+DEFAULT_TAXCODE_INDEX = "taxcode"
 
 # Load environment variables from agent-py/.env.local.
 load_dotenv(ENV_PATH)
 
 
-def _load_knowledge_documents() -> list[DocumentInfo]:
-    """Load knowledge.json into a list of Moss DocumentInfo entries."""
-    if not KNOWLEDGE_PATH.exists():
-        raise FileNotFoundError(f"Knowledge data file not found at {KNOWLEDGE_PATH}.")
+def _load_documents(path: Path, label: str) -> list[DocumentInfo]:
+    """Load a JSON corpus file into Moss DocumentInfo entries.
 
-    with KNOWLEDGE_PATH.open("r", encoding="utf-8") as handle:
+    The file must be a list of ``{"id", "text", "metadata"?}`` objects. Entries
+    missing an id or text are skipped; metadata values are coerced to strings
+    (Moss stores/compares metadata as strings). Shared by the knowledge (RAG)
+    and taxcode (cited tax-law) corpora so both parse identically.
+    """
+    if not path.exists():
+        raise FileNotFoundError(f"{label} data file not found at {path}.")
+
+    with path.open("r", encoding="utf-8") as handle:
         data = json.load(handle)
 
     if not isinstance(data, list):
-        raise ValueError("knowledge.json must be a list of document entries.")
+        raise ValueError(f"{path.name} must be a list of document entries.")
 
     documents: list[DocumentInfo] = []
     for entry in data:
@@ -65,9 +74,19 @@ def _load_knowledge_documents() -> list[DocumentInfo]:
         )
 
     if not documents:
-        raise ValueError("No valid documents were loaded from knowledge.json.")
+        raise ValueError(f"No valid documents were loaded from {path.name}.")
 
     return documents
+
+
+def _load_knowledge_documents() -> list[DocumentInfo]:
+    """Load knowledge.json (the RAG corpus) into Moss DocumentInfo entries."""
+    return _load_documents(KNOWLEDGE_PATH, "Knowledge")
+
+
+def _load_taxcode_documents() -> list[DocumentInfo]:
+    """Load taxcode.json (the cited tax-law corpus) into Moss DocumentInfo entries."""
+    return _load_documents(TAXCODE_PATH, "Tax-code")
 
 
 def _memory_seed_documents() -> list[DocumentInfo]:
@@ -85,11 +104,25 @@ def _memory_seed_documents() -> list[DocumentInfo]:
     ]
 
 
-async def build_indexes() -> None:
+ALL_INDEXES = ("knowledge", "memory", "taxcode")
+
+
+async def build_indexes(which: set[str] | None = None) -> None:
+    """(Re)build Moss indexes. ``which`` selects a subset; None builds all.
+
+    IMPORTANT: ``knowledge`` is the home of the user's PARSED 1040 (loaded by
+    src/ingest_tax.py from the real PDF). Rebuilding ``knowledge`` here reseeds it
+    from the starter's placeholder ``knowledge.json`` and OVERWRITES that return.
+    So to (re)build only the cited tax-law corpus without touching the 1040, run:
+
+        uv --directory agent-py run src/create_index.py taxcode
+    """
+    which = which or set(ALL_INDEXES)
     project_id = os.getenv("MOSS_PROJECT_ID")
     project_key = os.getenv("MOSS_PROJECT_KEY")
     knowledge_index = os.getenv("MOSS_INDEX_NAME", DEFAULT_KNOWLEDGE_INDEX)
     memory_index = os.getenv("MOSS_MEMORY_INDEX_NAME", DEFAULT_MEMORY_INDEX)
+    taxcode_index = os.getenv("MOSS_TAXCODE_INDEX_NAME", DEFAULT_TAXCODE_INDEX)
     model_id = os.getenv("MOSS_MODEL_ID", DEFAULT_MODEL_ID)
 
     missing = [
@@ -110,35 +143,44 @@ async def build_indexes() -> None:
     assert project_id is not None
     assert project_key is not None
 
-    knowledge_docs = _load_knowledge_documents()
-    memory_docs = _memory_seed_documents()
-
     client = MossClient(project_id, project_key)
 
-    print(
-        f"Creating Moss knowledge index '{knowledge_index}' with "
-        f"{len(knowledge_docs)} docs using model '{model_id}'..."
-    )
-    knowledge_result = await client.create_index(
-        knowledge_index, knowledge_docs, model_id
-    )
-    print(
-        f"  done (job: {knowledge_result.job_id}, index: {knowledge_result.index_name}, "
-        f"docs: {knowledge_result.doc_count})"
-    )
+    async def _build(name: str, index_name: str, docs: list[DocumentInfo]) -> None:
+        print(
+            f"Creating Moss {name} index '{index_name}' with "
+            f"{len(docs)} docs using model '{model_id}'..."
+        )
+        result = await client.create_index(index_name, docs, model_id)
+        print(
+            f"  done (job: {result.job_id}, index: {result.index_name}, "
+            f"docs: {result.doc_count})"
+        )
 
-    print(
-        f"Creating Moss memory index '{memory_index}' with "
-        f"{len(memory_docs)} seed doc(s) using model '{model_id}'..."
-    )
-    memory_result = await client.create_index(memory_index, memory_docs, model_id)
-    print(
-        f"  done (job: {memory_result.job_id}, index: {memory_result.index_name}, "
-        f"docs: {memory_result.doc_count})"
-    )
+    if "knowledge" in which:
+        await _build("knowledge", knowledge_index, _load_knowledge_documents())
+    if "memory" in which:
+        await _build("memory", memory_index, _memory_seed_documents())
+    if "taxcode" in which:
+        await _build("taxcode", taxcode_index, _load_taxcode_documents())
 
-    print("Both Moss indexes created. Knowledge (RAG) and memory are ready for use.")
+    if which == set(ALL_INDEXES):
+        print(
+            "All Moss indexes created. Knowledge (RAG), memory, and taxcode "
+            "(cited tax-law corpus) are ready for use."
+        )
+    else:
+        print(f"Built Moss index(es): {', '.join(sorted(which))}.")
 
 
-if __name__ == "__main__":
-    asyncio.run(build_indexes())
+if __name__ == "__main__":  # pragma: no cover
+    # Optional positional args pick which indexes to build, e.g.
+    #   create_index.py taxcode        -> only the cited tax-law corpus
+    #   create_index.py knowledge memory taxcode  (or no args) -> all three
+    requested = {a.lower() for a in sys.argv[1:]}
+    unknown = requested - set(ALL_INDEXES)
+    if unknown:
+        raise SystemExit(
+            f"Unknown index(es): {', '.join(sorted(unknown))}. "
+            f"Choose from: {', '.join(ALL_INDEXES)}."
+        )
+    asyncio.run(build_indexes(requested or None))
