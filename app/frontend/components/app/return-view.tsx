@@ -20,9 +20,9 @@ export function ReturnView({ appConfig }: ReturnViewProps) {
   // (voice + Olivia avatar) instead of taking over the full screen.
   if (isConnected) {
     return (
-      <main className="grid h-svh grid-cols-1 lg:grid-cols-2">
-        {/* Your tax document — stays visible next to the CPA while you talk */}
-        <section className="bg-muted relative hidden overflow-hidden border-r lg:block">
+      <main className="grid h-svh grid-cols-2">
+        {/* Your tax document — always beside the CPA while you talk */}
+        <section className="bg-muted relative overflow-hidden border-r">
           <iframe
             src="/tax-return.pdf"
             title="Your tax return"
