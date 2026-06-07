@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useClerk, useUser } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
 import { BrowserFrame } from './browser-frame';
 import { CursorReveal } from './cursor-reveal';
@@ -42,6 +43,20 @@ function Branch({ side }: { side: 'left' | 'right' }) {
 
 export function LandingView({ companyName = 'Tax It Easy' }: LandingViewProps) {
   const router = useRouter();
+  const { isSignedIn } = useUser();
+  const { openSignIn } = useClerk();
+
+  // Gate entry on auth. Signed-in users go straight to the app; signed-out users
+  // get Clerk's sign-in/sign-up MODAL overlaid on this landing (background stays)
+  // instead of a redirect to a separate page. After auth, Clerk sends them to
+  // /upload (both the sign-in and switch-to-sign-up paths).
+  const handleEnter = () => {
+    if (isSignedIn) {
+      router.push('/upload');
+    } else {
+      openSignIn({ forceRedirectUrl: '/upload', signUpForceRedirectUrl: '/upload' });
+    }
+  };
 
   return (
     <main className="relative flex min-h-svh w-full items-center justify-center overflow-hidden px-6 py-20">
@@ -83,7 +98,7 @@ export function LandingView({ companyName = 'Tax It Easy' }: LandingViewProps) {
             <Magnetic radius={140} strength={0.4} className="mt-9">
               <Button
                 size="lg"
-                onClick={() => router.push('/upload')}
+                onClick={handleEnter}
                 className="rounded-full px-12 font-mono text-xs font-bold tracking-wider uppercase"
               >
                 Enter
