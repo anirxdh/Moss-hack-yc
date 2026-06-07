@@ -1,3 +1,4 @@
+<!-- Setup smoke test: confirming commit + push to main works. -->
 # Conversational AI Hackathon 2026 — Master Brief
 
 > **The single most important file in this folder.** Everything else (platform reports, ideas) is built to win *this specific event*. Read this first.
