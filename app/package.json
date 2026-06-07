@@ -9,9 +9,10 @@
     "install:agent-py": "uv --directory agent-py sync",
     "env:copy": "test -f frontend/.env.local || cp frontend/.env.example frontend/.env.local; test -f agent-py/.env.local || cp agent-py/.env.example agent-py/.env.local",
 
-    "dev": "concurrently -n agent-py,frontend -c cyan,magenta \"pnpm dev:agent-py\" \"pnpm dev:frontend\"",
+    "dev": "concurrently -n agent-py,ingest,frontend -c cyan,yellow,magenta \"pnpm dev:agent-py\" \"pnpm dev:ingest\" \"pnpm dev:frontend\"",
     "dev:frontend": "pnpm --dir frontend dev",
     "dev:agent-py": "uv --directory agent-py run src/agent.py dev",
+    "dev:ingest": "uv --directory agent-py run src/ingest_service.py",
 
     "agent:py:console": "uv --directory agent-py run src/agent.py console",
     "agent:py:start": "uv --directory agent-py run src/agent.py start",
@@ -27,7 +28,8 @@
     "lint:agent-py": "uv --directory agent-py run ruff check .",
     "format": "pnpm --dir frontend format && uv --directory agent-py run ruff format .",
 
-    "test": "pnpm test:agent-py",
+    "test": "pnpm test:frontend && pnpm test:agent-py",
+    "test:frontend": "pnpm --dir frontend test",
     "test:agent-py": "uv --directory agent-py run pytest"
   },
   "devDependencies": {
