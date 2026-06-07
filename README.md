@@ -13,6 +13,9 @@ speaks numbers and tax-law citations it can actually source.
 It is deliberately a **sponsor-stack sweep** — it uses Unsiloed → Moss → LiveKit →
 MiniMax → TrueFoundry → AWS naturally, end to end (see [the sponsor map](#sponsor-stack)).
 
+<img width="1044" height="736" alt="Screenshot 2026-06-07 at 11 33 26 AM" src="https://github.com/user-attachments/assets/076ec54c-6d21-4194-a2c6-4b0ab4a84b43" />
+
+
 ---
 
 ## Table of contents
