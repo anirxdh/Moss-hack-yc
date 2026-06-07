@@ -61,8 +61,13 @@ export default async function RootLayout({ children }: RootLayoutProps) {
         'scroll-smooth font-sans antialiased'
       )}
     >
-      <head>
-        {styles && <style>{styles}</style>}
+      <head suppressHydrationWarning>
+        {/* App-config theme vars, injected at the server. Rendered as opaque HTML
+            (not a hydrated text child) with suppressHydrationWarning so a browser
+            extension that mutates <head> before React hydrates (e.g. one that
+            injects `body[unresolved]{opacity:0}` anti-FOUC styles) can't shift
+            this node and trigger a hydration mismatch. */}
+        {styles && <style suppressHydrationWarning dangerouslySetInnerHTML={{ __html: styles }} />}
         <title>{pageTitle}</title>
         <meta name="description" content={pageDescription} />
       </head>
