@@ -84,7 +84,15 @@ class PatchedMinimaxTTS(minimax.TTS):
     segment per turn (multi-sentence safe)."""
 
     def __init__(self, *args, base_url: str | None = None, **kwargs) -> None:
+        # The stock plugin validates voice_id against an OUTDATED Literal that
+        # omits newer MiniMax voices (Calm_Woman, Wise_Woman, Deep_Voice_Man, ...).
+        # Pop it before super().__init__ (which would raise a pydantic
+        # ValidationError), then set it directly on _opts — pydantic doesn't
+        # re-validate on assignment — so any voice the MiniMax API accepts works.
+        voice_id = kwargs.pop("voice_id", None)
         super().__init__(*args, **kwargs)
+        if voice_id is not None:
+            self._opts.voice_id = voice_id
         self._opts.base_url = (
             base_url or os.environ.get("MINIMAX_BASE_URL") or DEFAULT_MINIMAX_BASE_URL
         )
