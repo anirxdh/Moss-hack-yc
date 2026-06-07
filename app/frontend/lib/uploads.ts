@@ -1,14 +1,17 @@
 // Client-side upload orchestration: the single source of truth for the
-// presign -> direct-to-S3 -> complete flow used by the upload view. Keeping it
-// here (not inline in the component) means the three-step dance and its error
-// handling are tested once, in isolation.
+// presign -> direct-to-S3 flow used by the upload view. Keeping it here (not
+// inline in the component) means the dance and its error handling are tested
+// once, in isolation.
 //
-//   presign (Next)  ->  POST file to S3  ->  complete (Next -> agent ingest)
+//   presign (Next)  ->  POST file to S3
+//
+// Upload just lands the bytes in S3 and returns the key. The prepared 1040 shown
+// on /return is a separate document (placed in S3 + ingested into Moss by the
+// local script); these uploads aren't parsed by the app.
 
 export interface UploadResult {
   docId: string;
   key: string;
-  jobId?: string;
 }
 
 interface PresignResponse {
@@ -17,7 +20,7 @@ interface PresignResponse {
   fields: Record<string, string>;
 }
 
-/** Upload one file: presign, POST directly to S3, then trigger ingestion. */
+/** Upload one file: presign, then POST directly to S3. Returns its object key. */
 export async function uploadFile(docId: string, file: File): Promise<UploadResult> {
   // 1) Ask our server for a presigned POST scoped to this user + document.
   const presignRes = await fetch('/api/uploads/presign', {
@@ -44,17 +47,7 @@ export async function uploadFile(docId: string, file: File): Promise<UploadResul
     throw new Error(`Upload to storage failed (${s3Res.status})`);
   }
 
-  // 3) Tell our server the upload finished so it can kick off ingestion.
-  const completeRes = await fetch('/api/uploads/complete', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ key, docId }),
-  });
-  if (!completeRes.ok) {
-    throw new Error((await completeRes.text()) || 'Could not start processing');
-  }
-  const data = await completeRes.json().catch(() => ({}) as { job_id?: string });
-  return { docId, key, jobId: data.job_id };
+  return { docId, key };
 }
 
 export type UploadStatus = 'uploading' | 'done' | 'error';

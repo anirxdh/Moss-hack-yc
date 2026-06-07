@@ -1,12 +1,11 @@
 import { BackButton } from '@/components/app/back-button';
 import { GroundingChips } from '@/components/app/cpa-call/grounding-chips';
-import { ReturnSummary } from '@/components/app/cpa-call/return-summary';
 import { SuggestedQuestions } from '@/components/app/cpa-call/suggested-questions';
 
 /**
- * Live CPA call screen — composes the in-app add-ons (numbers at a glance,
- * suggested questions, grounding chips) around the agent presence. Self-contained
- * and conflict-free; the same components can be lifted into /return later.
+ * Live CPA call screen — composes the in-app add-ons (suggested questions,
+ * grounding chips) around the agent presence. Self-contained and conflict-free;
+ * the same components can be lifted into /return later.
  */
 export default function CallPage() {
   return (
@@ -26,14 +25,9 @@ export default function CallPage() {
             <p className="text-muted-foreground mt-3 text-sm">Listening&hellip;</p>
           </div>
 
-          {/* Numbers at a glance */}
-          <section className="fade-up mt-12" style={{ animationDelay: '120ms' }}>
-            <ReturnSummary />
-          </section>
-
           {/* Suggested questions + grounding */}
           <section
-            className="fade-up mt-10 grid gap-8 lg:grid-cols-[1.5fr_1fr]"
+            className="fade-up mt-12 grid gap-8 lg:grid-cols-[1.5fr_1fr]"
             style={{ animationDelay: '200ms' }}
           >
             <SuggestedQuestions />

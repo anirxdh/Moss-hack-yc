@@ -60,11 +60,17 @@ def load_profile(path: str | Path = DEFAULT_PROFILE) -> dict:
         return json.load(fh)
 
 
-def build_documents(profile: dict) -> list[DocumentInfo]:
+def build_documents(profile: dict, user_id: str) -> list[DocumentInfo]:
     """Turn a brokerage snapshot into Moss documents (pure; no network).
 
     One chunk per position plus account / dividend / realized-gain summaries,
     each written as natural language so retrieval and text-to-speech read well.
+
+    Every chunk is tagged with ``user_id`` and given a user-namespaced id, exactly
+    like the tax-document seam (``ingest_tax.chunks_to_docs``). Without the tag
+    these portfolio docs would sit in the shared ``knowledge`` index untouchable
+    by the agent's per-user retrieval filter (and would collide across users on
+    their fixed ids). With it, the CPA can ground on THIS user's portfolio only.
     """
     docs: list[DocumentInfo] = []
     as_of = profile.get("as_of", "")
@@ -81,7 +87,7 @@ def build_documents(profile: dict) -> list[DocumentInfo]:
     acct_type = account.get("type", "brokerage")
     docs.append(
         DocumentInfo(
-            id="rh-account-summary",
+            id=f"{user_id}-rh-account-summary",
             text=(
                 f"Robinhood {acct_type} account summary as of {as_of}: total "
                 f"account value {_money(total)}, including {_money(cash)} in cash. "
@@ -89,7 +95,7 @@ def build_documents(profile: dict) -> list[DocumentInfo]:
                 f"{_money(cost)}, an unrealized gain of {_money(unrealized)} "
                 f"(up {pct:.1f}% over cost)."
             ),
-            metadata={"source": SOURCE, "type": "account_summary"},
+            metadata={"user_id": user_id, "source": SOURCE, "type": "account_summary"},
         )
     )
 
@@ -104,14 +110,19 @@ def build_documents(profile: dict) -> list[DocumentInfo]:
         )
         docs.append(
             DocumentInfo(
-                id=f"rh-position-{p['symbol']}",
+                id=f"{user_id}-rh-position-{p['symbol']}",
                 text=(
                     f"You hold {p['shares']} shares of {p['name']} ({p['symbol']}) "
                     f"in your Robinhood account. Average cost {_money(p['avg_cost'])} "
                     f"per share, current price {_money(p['current_price'])}, market "
                     f"value {_money(p['market_value'])} — {change}."
                 ),
-                metadata={"source": SOURCE, "type": "position", "symbol": p["symbol"]},
+                metadata={
+                    "user_id": user_id,
+                    "source": SOURCE,
+                    "type": "position",
+                    "symbol": p["symbol"],
+                },
             )
         )
 
@@ -122,13 +133,13 @@ def build_documents(profile: dict) -> list[DocumentInfo]:
         listing = ", ".join(f"{d['name']} {_money(d['amount'])}" for d in divs)
         docs.append(
             DocumentInfo(
-                id="rh-dividends",
+                id=f"{user_id}-rh-dividends",
                 text=(
                     f"Dividends received so far this year total {_money(div_total)} "
                     f"across your Robinhood holdings: {listing}. Dividends are taxable "
                     f"income and are reported on a 1099-DIV."
                 ),
-                metadata={"source": SOURCE, "type": "dividends"},
+                metadata={"user_id": user_id, "source": SOURCE, "type": "dividends"},
             )
         )
 
@@ -137,7 +148,7 @@ def build_documents(profile: dict) -> list[DocumentInfo]:
     if rg:
         docs.append(
             DocumentInfo(
-                id="rh-realized-gains",
+                id=f"{user_id}-rh-realized-gains",
                 text=(
                     f"Realized capital gains so far this year total "
                     f"{_money(rg['total'])} in your Robinhood account: "
@@ -145,7 +156,11 @@ def build_documents(profile: dict) -> list[DocumentInfo]:
                     f"income) and {_money(rg['long_term'])} long-term (lower "
                     f"long-term capital-gains rate). Reported on a 1099-B."
                 ),
-                metadata={"source": SOURCE, "type": "realized_gains"},
+                metadata={
+                    "user_id": user_id,
+                    "source": SOURCE,
+                    "type": "realized_gains",
+                },
             )
         )
 
@@ -161,9 +176,16 @@ async def main() -> None:
     if not Path(profile_path).exists():
         raise SystemExit(f"Profile not found: {profile_path}")
 
-    print(f"[1/2] Building financial-profile docs from {Path(profile_path).name}")
+    # The portfolio belongs to a specific user — tag it with the same id the
+    # frontend uses (set INGEST_USER_ID to the Clerk user) so the agent's
+    # per-user retrieval filter can reach it. Defaults to the demo user.
+    user_id = os.getenv("INGEST_USER_ID", "user_1")
+    print(
+        f"[1/2] Building financial-profile docs from {Path(profile_path).name} "
+        f"for user '{user_id}'"
+    )
     profile = load_profile(profile_path)
-    docs = build_documents(profile)
+    docs = build_documents(profile, user_id)
     by_type: dict[str, int] = {}
     for d in docs:
         by_type[d.metadata["type"]] = by_type.get(d.metadata["type"], 0) + 1

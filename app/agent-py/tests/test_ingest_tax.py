@@ -216,8 +216,6 @@ def test_ingest_pdf_returns_counts(monkeypatch, tmp_path) -> None:
     assert result["chunks"] == 2
     assert result["smoke_hits"] == 1
 
-
-def test_main_resume_job(monkeypatch, tmp_path) -> None:
     pdf = tmp_path / "tax.pdf"
     pdf.write_bytes(b"%PDF")
     _set_env(monkeypatch)

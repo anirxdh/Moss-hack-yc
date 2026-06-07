@@ -1,8 +1,14 @@
 import { randomUUID } from 'node:crypto';
 // eslint-disable-next-line import/no-unresolved -- `server-only` ships an exports map the import resolver can't follow; it resolves fine at build/runtime.
 import 'server-only';
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import {
+  GetObjectCommand,
+  HeadObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import { type PresignedPost, createPresignedPost } from '@aws-sdk/s3-presigned-post';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 // Server-only S3 helpers for the document-upload flow. The browser uploads
 // DIRECTLY to S3 with a short-lived presigned POST policy that this module signs
@@ -15,6 +21,11 @@ const BUCKET = process.env.S3_UPLOAD_BUCKET ?? 'moss-yc-hackathon-docs';
 
 export const MAX_UPLOAD_BYTES = 25 * 1024 * 1024; // 25 MB — typical tax PDFs are well under this
 export const PRESIGN_TTL_SECONDS = 300; // 5 min
+export const RETURN_DOC_TTL_SECONDS = 900; // 15 min — covers a demo call's lifetime
+// Per-user location of the prepared 1040: `users/{userId}/{suffix}`. The suffix
+// is fixed by convention (overridable for the demo) so the viewer finds each
+// user's return from their id alone — no per-user config.
+const RETURN_DOC_KEY_SUFFIX = process.env.RETURN_DOC_KEY_SUFFIX ?? 'return/1040.pdf';
 export const ALLOWED_CONTENT_TYPES = [
   'application/pdf',
   'image/jpeg',
@@ -89,6 +100,45 @@ export async function presignUpload({
     Expires: PRESIGN_TTL_SECONDS,
   });
   return { key, post };
+}
+
+/**
+ * Presign a short-lived GET URL for an existing object — the CPA-prepared 1040
+ * the demo placed in S3 (and ingested into Moss by the local script). The key is
+ * server-controlled (never the client), so the browser only ever receives a
+ * time-boxed URL it can load directly into the PDF viewer — raw S3 creds and the
+ * bucket layout stay server-side.
+ */
+/** The S3 key of a given user's prepared 1040 (derived from their id alone). */
+export function buildReturnDocKey(userId: string): string {
+  return `users/${userId}/${RETURN_DOC_KEY_SUFFIX}`;
+}
+
+/** Whether the prepared 1040 actually exists at `key` (so the route can return a
+ *  clean 404 for a user who has no return yet, instead of a broken iframe). */
+export async function returnDocExists(key: string): Promise<boolean> {
+  try {
+    await client().send(new HeadObjectCommand({ Bucket: BUCKET, Key: key }));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function presignReturnDoc(key: string): Promise<string> {
+  return getSignedUrl(
+    client(),
+    new GetObjectCommand({
+      Bucket: BUCKET,
+      Key: key,
+      // Force inline PDF rendering in the iframe regardless of how the object was
+      // uploaded (otherwise a missing/attachment disposition makes browsers
+      // download it instead of displaying it).
+      ResponseContentType: 'application/pdf',
+      ResponseContentDisposition: 'inline',
+    }),
+    { expiresIn: RETURN_DOC_TTL_SECONDS }
+  );
 }
 
 /**

@@ -48,7 +48,9 @@ def _prep(monkeypatch, tmp_path):
     monkeypatch.setenv("MOSS_PROJECT_ID", "p")
     monkeypatch.setenv("MOSS_PROJECT_KEY", "pk")
     monkeypatch.setattr(ingest_robinhood, "load_profile", lambda p: {})
-    monkeypatch.setattr(ingest_robinhood, "build_documents", lambda prof: _fake_docs())
+    monkeypatch.setattr(
+        ingest_robinhood, "build_documents", lambda prof, user_id: _fake_docs()
+    )
     monkeypatch.setattr(
         ingest_robinhood.sys, "argv", ["ingest_robinhood.py", str(prof)]
     )
