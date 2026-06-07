@@ -56,3 +56,7 @@ node_modules/
 .coverage
 .coverage.*
 htmlcov/
+
+# Agent skill installs (clerk/skills via `npx skills add`) — machine-local tooling
+.agents/
+skills-lock.json

@@ -1,7 +1,6 @@
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { AccessToken, type AccessTokenOptions, type VideoGrant } from 'livekit-server-sdk';
-import { randomUUID } from 'node:crypto';
+import { auth } from '@clerk/nextjs/server';
 import { RoomAgentDispatch, RoomConfiguration } from '@livekit/protocol';
 
 type ConnectionDetails = {
@@ -18,19 +17,17 @@ const LIVEKIT_URL = process.env.LIVEKIT_URL;
 // Agent dispatch name — must match the agent's registered name (`agent-py`). See `.env.local`.
 const AGENT_NAME = process.env.AGENT_NAME;
 
-// httpOnly cookie that persists a stable per-user id across visits. Stamped into the agent
-// dispatch metadata as `{ "user_id": <uuid> }` so the agent can scope its Moss memory per user.
-const USER_COOKIE = 'lk_moss_user';
-const USER_COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
-
 // don't cache the results
 export const revalidate = 0;
 
 export async function POST(req: Request) {
-  if (process.env.NODE_ENV !== 'development') {
-    throw new Error(
-      'THIS API ROUTE IS INSECURE. DO NOT USE THIS ROUTE IN PRODUCTION WITHOUT AN AUTHENTICATION LAYER.'
-    );
+  // Identity now comes from Clerk (this route is gated by middleware). The Clerk
+  // userId is the SAME id used as the S3 key prefix and the ingest user_id tag,
+  // so the agent's per-user retrieval filter (agent.py search_knowledge) matches
+  // the documents this user uploaded. One id, end to end.
+  const { userId } = await auth();
+  if (!userId) {
+    return new NextResponse('Unauthorized', { status: 401 });
   }
 
   try {
@@ -42,14 +39,6 @@ export async function POST(req: Request) {
     }
     if (API_SECRET === undefined) {
       throw new Error('LIVEKIT_API_SECRET is not defined');
-    }
-
-    // Resolve a stable per-user id from the httpOnly cookie, minting one on first visit.
-    const cookieStore = await cookies();
-    let userId = cookieStore.get(USER_COOKIE)?.value;
-    const isNewUser = !userId;
-    if (!userId) {
-      userId = randomUUID();
     }
 
     // Parse room config from request body.
@@ -93,20 +82,7 @@ export async function POST(req: Request) {
     const headers = new Headers({
       'Cache-Control': 'no-store',
     });
-    const response = NextResponse.json(data, { headers });
-
-    // Persist the per-user id for subsequent visits (only needs writing when freshly minted).
-    if (isNewUser) {
-      response.cookies.set(USER_COOKIE, userId, {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: (process.env.NODE_ENV as string) === 'production',
-        path: '/',
-        maxAge: USER_COOKIE_MAX_AGE,
-      });
-    }
-
-    return response;
+    return NextResponse.json(data, { headers });
   } catch (error) {
     if (error instanceof Error) {
       console.error(error);

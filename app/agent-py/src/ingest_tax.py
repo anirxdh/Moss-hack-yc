@@ -103,14 +103,22 @@ def poll_job(job_id: str, api_key: str) -> list[dict]:
     raise TimeoutError(f"parse polling timed out after {POLL_DEADLINE_S}s")
 
 
-def chunks_to_docs(chunks: list[dict], user_id: str) -> list[DocumentInfo]:
-    """Turn Unsiloed chunks into Moss documents for a specific user.
+def chunks_to_docs(
+    chunks: list[dict], user_id: str, doc_id: str, source: str
+) -> list[DocumentInfo]:
+    """Turn Unsiloed chunks into Moss documents for a specific user + document.
 
     The `knowledge` index is shared across users (option B), so every chunk is
-    tagged with `user_id` and given a user-namespaced id (`{user_id}-chunk-{i}`).
-    The agent's search_knowledge filters by this `user_id`, so users never see
-    each other's returns. Re-ingesting the same user upserts by id (replacing
-    their docs) without touching anyone else's.
+    tagged with `user_id` and given a user+document-namespaced id
+    (`{user_id}-{doc_id}-chunk-{i}`).
+
+    Namespacing by `doc_id` (the upload slot — e.g. "w2", "1099int", or
+    "tax_return" for the CLI) is what lets ONE user upload MANY documents: each
+    upload writes its own `{user_id}-{doc_id}-chunk-*` ids, so a second upload no
+    longer upserts over the first's `{user_id}-chunk-*` ids and silently destroys
+    it. The agent's search_knowledge filters by `user_id`, so users never see
+    each other's returns; re-uploading the SAME slot upserts (replaces) just that
+    document.
     """
     docs: list[DocumentInfo] = []
     for i, ch in enumerate(chunks):
@@ -130,7 +138,8 @@ def chunks_to_docs(chunks: list[dict], user_id: str) -> list[DocumentInfo]:
         types = sorted({s["segment_type"] for s in segs if s.get("segment_type")})
         meta = {
             "user_id": user_id,
-            "source": "2025_tax_return",
+            "doc_id": doc_id,
+            "source": source,
             "chunk_index": str(i),
         }
         if ch.get("chunk_id"):
@@ -139,24 +148,44 @@ def chunks_to_docs(chunks: list[dict], user_id: str) -> list[DocumentInfo]:
             meta["page"] = str(page)
         if types:
             meta["types"] = ",".join(types)[:200]
-        docs.append(DocumentInfo(id=f"{user_id}-chunk-{i}", text=text, metadata=meta))
+        docs.append(
+            DocumentInfo(id=f"{user_id}-{doc_id}-chunk-{i}", text=text, metadata=meta)
+        )
     return docs
 
 
-async def main() -> None:
-    pdf_path = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_PDF
+async def ingest_pdf(
+    pdf_path: str,
+    user_id: str,
+    doc_id: str,
+    source: str,
+    *,
+    resume_job: str | None = None,
+) -> dict:
+    """Parse one PDF with Unsiloed and upsert its chunks into the shared Moss
+    `knowledge` index, namespaced by (``user_id``, ``doc_id``).
+
+    This is the reusable core shared by the CLI (``main``) and the FastAPI
+    ingest service (``src/ingest_service.py``). It raises on any unrecoverable
+    condition (missing creds, index not found, empty parse) so every caller can
+    surface a clear error instead of a silent no-op.
+
+    Returns a small result dict of COUNTS only — it never returns or logs
+    document text (which may contain SSN / income).
+
+    Pipeline:
+        PDF --(Unsiloed /parse)--> chunks --(chunks_to_docs)--> Moss add_docs
+    """
     api_key = os.getenv("UNSILOED_API_KEY")
     project_id = os.getenv("MOSS_PROJECT_ID")
     project_key = os.getenv("MOSS_PROJECT_KEY")
-
     if not api_key:
-        raise SystemExit("UNSILOED_API_KEY missing from agent-py/.env.local")
+        raise RuntimeError("UNSILOED_API_KEY missing from agent-py/.env.local")
     if not (project_id and project_key):
-        raise SystemExit("MOSS_PROJECT_ID / MOSS_PROJECT_KEY missing")
+        raise RuntimeError("MOSS_PROJECT_ID / MOSS_PROJECT_KEY missing")
     if not Path(pdf_path).exists():
-        raise SystemExit(f"PDF not found: {pdf_path}")
+        raise FileNotFoundError(f"PDF not found: {pdf_path}")
 
-    resume_job = os.getenv("UNSILOED_JOB_ID")
     if resume_job:
         print(f"[1/3] Resuming existing Unsiloed job: {resume_job}")
         chunks = poll_job(resume_job, api_key)
@@ -164,39 +193,34 @@ async def main() -> None:
         print(f"[1/3] Parsing with Unsiloed: {Path(pdf_path).name}")
         job_id = submit_parse(pdf_path, api_key)
         chunks = poll_job(job_id, api_key)
-    user_id = os.getenv("INGEST_USER_ID", DEFAULT_INGEST_USER)
-    docs = chunks_to_docs(chunks, user_id)
+
+    docs = chunks_to_docs(chunks, user_id, doc_id, source)
     print(
         f"[2/3] Prepared {len(docs)} Moss docs for user '{user_id}' "
-        f"from {len(chunks)} chunks."
+        f"doc '{doc_id}' from {len(chunks)} chunks."
     )
     if not docs:
-        raise SystemExit("No usable text parsed from the PDF.")
+        raise RuntimeError("No usable text parsed from the PDF.")
 
     client = MossClient(project_id, project_key)
     # Option B: the `knowledge` index is SHARED across users. Add only THIS
-    # user's docs (user-namespaced ids upsert their own chunks) so other users'
-    # returns are never disturbed. The index must already exist — create it once
-    # with: create_index.py knowledge.
-    print(
-        f"[3/3] Upserting {len(docs)} docs for user '{user_id}' "
-        f"into shared index '{INDEX_NAME}'..."
-    )
+    # user's docs (user+doc-namespaced ids upsert their own chunks) so neither
+    # other users' nor this user's OTHER documents are disturbed. The index must
+    # already exist — create it once with: create_index.py knowledge.
+    print(f"[3/3] Upserting {len(docs)} docs into shared index '{INDEX_NAME}'...")
     try:
         await client.load_index(INDEX_NAME)
     except Exception as exc:
-        raise SystemExit(
+        raise RuntimeError(
             f"Index '{INDEX_NAME}' not found. Create it once first:\n"
             f"  uv --directory agent-py run src/create_index.py knowledge"
         ) from exc
     await client.add_docs(INDEX_NAME, docs)
     await client.load_index(INDEX_NAME)  # reload so the new docs are queryable
-    print(f"      upserted {len(docs)} docs (other users' returns untouched).")
 
-    # Smoke query (counts + latency only; no document text printed).
-    print("Verifying retrieval...")
+    # Smoke query (counts + latency only; no document text printed). Moss writes
+    # are not immediately consistent, so warm with a short retry loop.
     hits = 0
-    latency = None
     for attempt in range(6):
         try:
             await client.load_index(INDEX_NAME)
@@ -208,23 +232,44 @@ async def main() -> None:
                     filter={"field": "user_id", "condition": {"$eq": user_id}},
                 ),
             )
-            rdocs = getattr(r, "docs", None) or []
-            hits = len(rdocs)
-            latency = getattr(r, "time_taken_ms", None)
-            pages = sorted(
-                {(getattr(d, "metadata", {}) or {}).get("page", "?") for d in rdocs}
-            )
+            hits = len(getattr(r, "docs", None) or [])
             if hits:
-                print(
-                    f"  retrieval OK: {hits} hits, time_taken_ms={latency}, pages={pages}"
-                )
                 break
         except Exception as exc:
             print(f"  (warming, attempt {attempt + 1}: {type(exc).__name__})")
         time.sleep(3)
-    if not hits:
-        print("  index updated but smoke query returned 0 (may still be building).")
-    print(f"DONE. The '{INDEX_NAME}' index now holds user '{user_id}'s tax document.")
+
+    return {
+        "user_id": user_id,
+        "doc_id": doc_id,
+        "source": source,
+        "chunks": len(chunks),
+        "docs_upserted": len(docs),
+        "smoke_hits": hits,
+    }
+
+
+async def main() -> None:
+    pdf_path = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_PDF
+    user_id = os.getenv("INGEST_USER_ID", DEFAULT_INGEST_USER)
+    # The CLI defaults to a single "tax_return" document so existing local-demo
+    # usage keeps working; the FastAPI service passes a real per-upload doc_id.
+    doc_id = os.getenv("INGEST_DOC_ID", "tax_return")
+    source = os.getenv("INGEST_SOURCE", "2025_tax_return")
+    resume_job = os.getenv("UNSILOED_JOB_ID")
+    if not Path(pdf_path).exists():
+        raise SystemExit(f"PDF not found: {pdf_path}")
+    try:
+        result = await ingest_pdf(
+            pdf_path, user_id, doc_id, source, resume_job=resume_job
+        )
+    except (RuntimeError, FileNotFoundError) as exc:
+        raise SystemExit(str(exc)) from exc
+    print(
+        f"DONE. upserted={result['docs_upserted']} chunks={result['chunks']} "
+        f"smoke_hits={result['smoke_hits']} — index '{INDEX_NAME}' now holds "
+        f"user '{user_id}' doc '{doc_id}'."
+    )
 
 
 if __name__ == "__main__":

@@ -44,26 +44,40 @@ def test_chunks_to_docs_prefers_embed_and_falls_back() -> None:
         },
         {"chunk_id": "c", "embed": "", "segments": []},  # no text -> skipped
     ]
-    docs = ingest_tax.chunks_to_docs(chunks, "u1")
+    docs = ingest_tax.chunks_to_docs(chunks, "u1", "w2", "W-2 wages")
 
-    # Ids are user-namespaced + index-based so re-ingest upserts this user only.
-    assert [d.id for d in docs] == ["u1-chunk-0", "u1-chunk-1"]
+    # Ids are user+doc-namespaced + index-based so re-ingest upserts this
+    # (user, document) only — without clobbering the user's OTHER documents.
+    assert [d.id for d in docs] == ["u1-w2-chunk-0", "u1-w2-chunk-1"]
     assert "Wages" in docs[0].text
     assert docs[0].metadata["user_id"] == "u1"
+    assert docs[0].metadata["doc_id"] == "w2"
     assert docs[0].metadata["chunk_id"] == "a"
     assert docs[0].metadata["page"] == "2"
     assert docs[0].metadata["types"] == "Text"
-    assert docs[0].metadata["source"] == "2025_tax_return"
+    assert docs[0].metadata["source"] == "W-2 wages"
     assert docs[1].text == "fallback md"
     assert docs[1].metadata["page"] == "3"
 
 
-def test_chunks_to_docs_namespaces_id_by_user() -> None:
-    docs = ingest_tax.chunks_to_docs([{"embed": "hi", "segments": []}], "u9")
-    assert docs[0].id == "u9-chunk-0"
-    assert docs[0].metadata["user_id"] == "u9"
-    assert "page" not in docs[0].metadata  # no segment page_number
-    assert "chunk_id" not in docs[0].metadata  # none provided
+def test_chunks_to_docs_namespaces_id_by_user_and_doc() -> None:
+    one = ingest_tax.chunks_to_docs(
+        [{"embed": "hi", "segments": []}], "u9", "w2", "W-2"
+    )
+    assert one[0].id == "u9-w2-chunk-0"
+    assert one[0].metadata["user_id"] == "u9"
+    assert one[0].metadata["doc_id"] == "w2"
+    assert "page" not in one[0].metadata  # no segment page_number
+    assert "chunk_id" not in one[0].metadata  # none provided
+
+    # REGRESSION (outside-voice #1): a DIFFERENT document for the SAME user must
+    # NOT collide on ids — otherwise the second upload silently clobbers the
+    # first's `{user}-chunk-*` ids. Per-doc namespacing keeps them distinct.
+    two = ingest_tax.chunks_to_docs(
+        [{"embed": "hi", "segments": []}], "u9", "1099int", "1099-INT"
+    )
+    assert two[0].id == "u9-1099int-chunk-0"
+    assert one[0].id != two[0].id
 
 
 # --------------------------------------------------------------------------- #
@@ -176,8 +190,31 @@ def test_main_happy_path(monkeypatch, tmp_path, capsys) -> None:
 
     out = capsys.readouterr().out
     assert "into shared index" in out
-    assert "upserted" in out
-    assert "retrieval OK" in out
+    assert "DONE." in out
+    assert "upserted=" in out
+
+
+def test_ingest_pdf_returns_counts(monkeypatch, tmp_path) -> None:
+    """The reusable core returns COUNTS only (no document text) and namespaces
+    by (user_id, doc_id) — this is what the FastAPI service calls."""
+    pdf = tmp_path / "tax.pdf"
+    pdf.write_bytes(b"%PDF")
+    _set_env(monkeypatch)
+    monkeypatch.setattr(ingest_tax, "submit_parse", lambda p, k: "J")
+    monkeypatch.setattr(
+        ingest_tax,
+        "poll_job",
+        lambda j, k: [
+            {"chunk_id": "a", "embed": "hi"},
+            {"embed": "yo", "segments": []},
+        ],
+    )
+    result = asyncio.run(ingest_tax.ingest_pdf(str(pdf), "u5", "w2", "W-2"))
+    assert result["user_id"] == "u5"
+    assert result["doc_id"] == "w2"
+    assert result["docs_upserted"] == 2
+    assert result["chunks"] == 2
+    assert result["smoke_hits"] == 1
 
 
 def test_main_resume_job(monkeypatch, tmp_path) -> None:
@@ -199,10 +236,12 @@ def test_main_resume_job(monkeypatch, tmp_path) -> None:
 
 
 def test_main_missing_key_exits(monkeypatch, tmp_path) -> None:
+    # PDF exists so we reach the credential check inside ingest_pdf (which raises
+    # RuntimeError -> main converts to SystemExit), not the earlier path check.
+    pdf = tmp_path / "x.pdf"
+    pdf.write_bytes(b"%PDF")
     monkeypatch.delenv("UNSILOED_API_KEY", raising=False)
-    monkeypatch.setattr(
-        ingest_tax.sys, "argv", ["ingest_tax.py", str(tmp_path / "x.pdf")]
-    )
+    monkeypatch.setattr(ingest_tax.sys, "argv", ["ingest_tax.py", str(pdf)])
     with pytest.raises(SystemExit):
         asyncio.run(ingest_tax.main())
 
