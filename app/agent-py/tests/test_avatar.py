@@ -134,20 +134,3 @@ async def test_build_avatar_simli_constructs_real(monkeypatch) -> None:
         avatar = agent_module.build_avatar()
 
     assert isinstance(avatar, simli.AvatarSession)
-
-
-# --------------------------------------------------------------------------- #
-# Frontend on/off toggle (dispatch metadata "avatar")
-# --------------------------------------------------------------------------- #
-def test_avatar_enabled_defaults_true_when_unset() -> None:
-    assert agent_module._avatar_enabled({}) is True
-
-
-def test_avatar_enabled_respects_false_bool() -> None:
-    assert agent_module._avatar_enabled({"avatar": False}) is False
-
-
-def test_avatar_enabled_respects_string_flags() -> None:
-    assert agent_module._avatar_enabled({"avatar": "true"}) is True
-    assert agent_module._avatar_enabled({"avatar": "false"}) is False
-    assert agent_module._avatar_enabled({"avatar": "off"}) is False

@@ -225,19 +225,6 @@ def build_avatar():
     return None
 
 
-def _avatar_enabled(metadata: dict) -> bool:
-    """Whether THIS session wants the avatar, from the frontend's dispatch metadata.
-
-    The frontend has an on/off toggle and sends {"avatar": true|false} so you can
-    run voice-only during testing and not burn avatar credits. Defaults to True
-    when unspecified (then AVATAR_PROVIDER/creds decide). Accepts bool or string.
-    """
-    val = metadata.get("avatar", True)
-    if isinstance(val, bool):
-        return val
-    return str(val).strip().lower() in ("1", "true", "yes", "on")
-
-
 class Assistant(Agent):
     """Voice agent that wires Moss retrieval + per-user memory into LiveKit."""
 
@@ -469,12 +456,10 @@ async def my_agent(
     # back to DEFAULT_USER_ID. Parsed before ctx.connect() to stay off the
     # connection critical path.
     user_id = DEFAULT_USER_ID
-    avatar_on = True
     if ctx.job.metadata:
         try:
             meta = json.loads(ctx.job.metadata)
             user_id = meta.get("user_id", DEFAULT_USER_ID)
-            avatar_on = _avatar_enabled(meta)
         except json.JSONDecodeError:
             logger.warning("ctx.job.metadata was not valid JSON; using default user_id")
 
@@ -500,14 +485,14 @@ async def my_agent(
     # Optional talking-head avatar (Tavus). Started before the session per the
     # LiveKit pattern: the avatar worker joins the room and publishes the agent's
     # voice as synced audio+video. Voice-only if disabled or creds are missing.
-    # The frontend toggle (dispatch metadata "avatar") can force voice-only to
-    # save avatar credits during testing, regardless of AVATAR_PROVIDER.
-    avatar = build_avatar() if avatar_on else None
+    # Optional talking-head avatar, controlled entirely by AVATAR_PROVIDER (see
+    # build_avatar). Started before the session per the LiveKit pattern: the
+    # avatar worker joins the room and publishes the agent's voice as synced
+    # audio+video. Set AVATAR_PROVIDER=none (or unset) for voice-only.
+    avatar = build_avatar()
     if avatar:
         await avatar.start(session, room=ctx.room)
         logger.info("AI CPA: avatar started (%s)", os.getenv("AVATAR_PROVIDER"))
-    elif not avatar_on:
-        logger.info("AI CPA: avatar disabled by client toggle; voice-only")
 
     # Start the session, which initializes the voice pipeline and warms up the models
     await session.start(
