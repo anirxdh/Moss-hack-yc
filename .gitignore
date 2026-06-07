@@ -51,3 +51,8 @@ __pycache__/
 .env
 .env.*
 node_modules/
+
+# --- Coverage artifacts ---
+.coverage
+.coverage.*
+htmlcov/
