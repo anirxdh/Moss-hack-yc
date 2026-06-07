@@ -1,105 +1,114 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/shadcn/utils';
+import { DocCategorySection } from './doc-category';
+import { DocSlot } from './doc-slot';
+import { CORE_DOCS, OPTIONAL_CATEGORIES } from './tax-documents';
 
 export function UploadView() {
   const router = useRouter();
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [files, setFiles] = useState<File[]>([]);
-  const [dragging, setDragging] = useState(false);
+  const [files, setFiles] = useState<Record<string, File>>({});
 
-  function addFiles(list: FileList | null) {
-    if (!list) return;
-    setFiles((prev) => [...prev, ...Array.from(list)]);
-  }
+  const onPick = (id: string, file: File) => setFiles((prev) => ({ ...prev, [id]: file }));
+  const onRemove = (id: string) =>
+    setFiles((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
 
-  function removeFile(idx: number) {
-    setFiles((prev) => prev.filter((_, i) => i !== idx));
-  }
+  const coreDone = CORE_DOCS.filter((d) => files[d.id]).length;
+  const totalFiles = Object.keys(files).length;
+  const pct = Math.round((coreDone / CORE_DOCS.length) * 100);
 
   return (
-    <main className="mx-auto grid min-h-svh w-full max-w-2xl content-start gap-6 px-6 py-16">
-      <header>
-        <h1 className="text-2xl font-bold tracking-tight">Upload your tax documents</h1>
-        <p className="text-muted-foreground mt-2 text-sm">
-          W-2s, 1099s, 1098s, K-1s, receipts — anything related to your US tax filing. Add as many
-          as you like.
-        </p>
-      </header>
+    <main className="upload-atmosphere min-h-svh">
+      <div className="mx-auto w-full max-w-4xl px-6 pt-20 pb-32">
+        {/* Header */}
+        <div className="fade-up">
+          <p className="text-primary/80 font-mono text-[11px] font-bold tracking-[0.2em] uppercase">
+            AI CPA — Step 1 of 2
+          </p>
+          <h1 className="font-display mt-3 text-4xl leading-[1.05] font-light tracking-tight sm:text-5xl">
+            Bring in your documents
+          </h1>
+          <p className="text-muted-foreground mt-4 max-w-xl text-sm leading-relaxed">
+            Add what you have — we&apos;ll do the rest. Start with the common forms, then open a
+            section below for anything else that applies to you.
+          </p>
+        </div>
 
-      {/* Dropzone */}
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={() => inputRef.current?.click()}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') inputRef.current?.click();
-        }}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragging(true);
-        }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setDragging(false);
-          addFiles(e.dataTransfer.files);
-        }}
-        className={cn(
-          'flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-10 text-center transition-colors',
-          dragging
-            ? 'border-primary bg-primary/5'
-            : 'border-muted-foreground/30 hover:border-muted-foreground/60'
-        )}
-      >
-        <p className="text-sm font-medium">Drag &amp; drop files here</p>
-        <p className="text-muted-foreground mt-1 text-xs">or click to browse</p>
-        <input
-          ref={inputRef}
-          type="file"
-          multiple
-          accept=".pdf,.png,.jpg,.jpeg,.heic,.tiff"
-          className="hidden"
-          onChange={(e) => addFiles(e.target.files)}
-        />
+        {/* Progress */}
+        <div className="fade-up mt-8 flex items-center gap-4" style={{ animationDelay: '70ms' }}>
+          <div className="bg-foreground/10 h-1.5 flex-1 overflow-hidden rounded-full">
+            <div
+              className="bg-primary h-full rounded-full transition-[width] duration-500 ease-out"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          <span className="text-muted-foreground font-mono text-xs whitespace-nowrap">
+            {coreDone} / {CORE_DOCS.length} common
+          </span>
+        </div>
+
+        {/* Common documents */}
+        <section className="mt-12">
+          <h2 className="text-muted-foreground font-mono text-xs font-bold tracking-[0.16em] uppercase">
+            Common documents
+          </h2>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {CORE_DOCS.map((d, i) => (
+              <DocSlot
+                key={d.id}
+                doc={d}
+                file={files[d.id]}
+                onPick={(f) => onPick(d.id, f)}
+                onRemove={() => onRemove(d.id)}
+                style={{ animationDelay: `${120 + i * 55}ms` }}
+              />
+            ))}
+          </div>
+        </section>
+
+        {/* Optional categories */}
+        <section className="mt-14">
+          <h2 className="text-muted-foreground font-mono text-xs font-bold tracking-[0.16em] uppercase">
+            Anything else?{' '}
+            <span className="text-foreground/40 normal-case">— optional, tap to open</span>
+          </h2>
+          <div className="mt-4 flex flex-col gap-2.5">
+            {OPTIONAL_CATEGORIES.map((c, i) => (
+              <DocCategorySection
+                key={c.id}
+                category={c}
+                files={files}
+                onPick={onPick}
+                onRemove={onRemove}
+                style={{ animationDelay: `${440 + i * 55}ms` }}
+              />
+            ))}
+          </div>
+        </section>
       </div>
 
-      {/* Selected files */}
-      {files.length > 0 && (
-        <ul className="grid gap-2">
-          {files.map((f, i) => (
-            <li
-              key={`${f.name}-${i}`}
-              className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm"
-            >
-              <span className="truncate">{f.name}</span>
-              <button
-                type="button"
-                onClick={() => removeFile(i)}
-                className="text-muted-foreground hover:text-foreground ml-3 shrink-0 text-xs"
-              >
-                Remove
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {/* Generate 1040 */}
-      <div className="flex items-center justify-between">
-        <span className="text-muted-foreground text-xs">
-          {files.length} file{files.length === 1 ? '' : 's'} selected
-        </span>
-        <Button
-          size="lg"
-          onClick={() => router.push('/return')}
-          className="rounded-full font-mono text-xs font-bold tracking-wider uppercase"
-        >
-          Generate 1040
-        </Button>
+      {/* Sticky action bar */}
+      <div className="border-foreground/10 bg-background/80 fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur-md">
+        <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-4 px-6 py-4">
+          <span className="text-muted-foreground text-xs">
+            {totalFiles === 0
+              ? 'No documents yet — you can still continue'
+              : `${totalFiles} document${totalFiles === 1 ? '' : 's'} added`}
+          </span>
+          <Button
+            size="lg"
+            onClick={() => router.push('/return')}
+            className="rounded-full font-mono text-xs font-bold tracking-wider uppercase"
+          >
+            Generate 1040
+          </Button>
+        </div>
       </div>
     </main>
   );

@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @source "../node_modules/streamdown/dist/index.js";
@@ -80,6 +81,7 @@
   --font-mono:
     var(--font-commit-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     'Liberation Mono', 'Courier New', monospace;
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -120,5 +122,45 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   AI CPA — document-upload UI: atmosphere + 60fps CSS motion
+   (transform/opacity only; scoped utility classes, no global side effects)
+---------------------------------------------------------------------------- */
+
+/* Soft accent glow from the top, layered over the page background. */
+.upload-atmosphere {
+  background:
+    radial-gradient(
+      48rem 32rem at 50% -8%,
+      color-mix(in oklch, var(--primary) 14%, transparent),
+      transparent 70%
+    ),
+    var(--background);
+}
+
+/* Staggered entrance — set animation-delay inline per item. */
+.fade-up {
+  opacity: 0;
+  animation: cpa-fade-up 0.62s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes cpa-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-up {
+    animation: none;
+    opacity: 1;
   }
 }
