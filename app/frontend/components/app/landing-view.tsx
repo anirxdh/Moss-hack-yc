@@ -66,7 +66,7 @@ export function LandingView({ companyName = 'Moss' }: LandingViewProps) {
           <p className="text-foreground text-sm font-medium">In your documents</p>
         </div>
 
-        <BrowserFrame url="moss · your ai cpa">
+        <BrowserFrame url="app.moss.cpa">
           <div className="flex flex-col items-center px-8 py-16 text-center sm:px-16 sm:py-20">
             <p className="eyebrow">{companyName} · AI CPA</p>
 
