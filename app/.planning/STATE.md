@@ -11,7 +11,7 @@ See: .planning/PROJECT.md (updated 2026-06-06)
 
 | Phase | Name | Status | Notes |
 |-------|------|--------|-------|
-| 1 | MiniMax Voice | ✓ Done | build_tts; MiniMax single-segment patch; Cartesia fallback; build_llm Qwen-ready |
+| 1 | MiniMax Voice | ✓ Done | **default voice + working**; intl endpoint (api.minimaxi.chat) + single-segment patch; Cartesia fallback; build_llm Qwen-ready |
 | 2 | Test Hardening (~100%) | ✓ Done | 46 offline tests, ~96.5% coverage, gate 95%, TESTING.md + AGENTS.md note |
 | 3 | Proactive Tax-Aware V2 | ○ Next | proactive opener + should-I-sell math + full tax code + multi-doc |
 | 4 | TrueFoundry Governance | ○ Pending | LLM gateway + PII (build_llm ready) |
@@ -25,6 +25,8 @@ See: .planning/PROJECT.md (updated 2026-06-06)
 - 2026-06-06: Phase 1 — MiniMax TTS (build_tts, voice_id, MINIMAX_GROUP_ID); single-segment patch (minimax_patch.py) for the multi-sentence crash; Cartesia fallback via TTS_PROVIDER. build_llm env-configurable (Qwen via provider or gateway).
 - 2026-06-06: Repo unified — app/ folded into Moss-hack-yc main (single branch).
 - 2026-06-06: Phase 2 — test hardening: +pytest-cov; tests for ingest_tax, create_index, ingest_robinhood main, Moss tools, voice, llm; 46 offline tests; ~96.5% coverage (gate 95%); fast/eval split; integration glue pragma'd; TESTING.md + AGENTS.md note.
+- 2026-06-06: MiniMax no-audio FIXED — root cause was the stock plugin's CHINA endpoint (api.minimax.chat returns HTTP 200 + zero audio for international accounts). Patch now targets api.minimaxi.chat (MINIMAX_BASE_URL override). MiniMax is now the DEFAULT voice (Cartesia fallback if creds missing). Live eval added as a regression guard. 49 offline tests, 96.6% coverage.
+- 2026-06-06: CI — added root-level .github/workflows/ci.yml (ruff + tests + 95% coverage gate) on push to main AND every PR. The starter's workflows lived in app/*/.github/ subdirs and never fired. First run: green.
 
 ---
-*Last updated: 2026-06-06 after Phase 2*
+*Last updated: 2026-06-06 — MiniMax fixed + CI live*
