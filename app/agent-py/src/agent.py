@@ -247,9 +247,7 @@ class Assistant(Agent):
         Args:
             query: The user's question or topic to look up.
         """
-        result = await self._moss.query(
-            KNOWLEDGE_INDEX, query, QueryOptions(top_k=3)
-        )
+        result = await self._moss.query(KNOWLEDGE_INDEX, query, QueryOptions(top_k=3))
         await self._publish_moss_context(query, result)
 
         docs = getattr(result, "docs", None) or []
@@ -328,7 +326,9 @@ server.setup_fnc = prewarm
 # Keep the registered dispatch name as "agent-py": the frontend (Task 6) sets
 # AGENT_NAME=agent-py to dispatch explicitly to this worker. Do not rename.
 @server.rtc_session(agent_name="agent-py")
-async def my_agent(ctx: JobContext):  # pragma: no cover  (LiveKit worker entrypoint; integration-tested by running the agent)
+async def my_agent(
+    ctx: JobContext,
+):  # pragma: no cover  (LiveKit worker entrypoint; integration-tested by running the agent)
     # Logging setup
     # Add any other context you want in all log entries here
     ctx.log_context_fields = {

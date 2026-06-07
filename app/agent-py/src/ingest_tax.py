@@ -160,7 +160,9 @@ async def main() -> None:
     except Exception as exc:  # index may not exist yet
         print(f"      (no existing '{INDEX_NAME}' to remove: {type(exc).__name__})")
 
-    print(f"[3/3] Building Moss index '{INDEX_NAME}' ({len(docs)} docs, model {MODEL_ID})...")
+    print(
+        f"[3/3] Building Moss index '{INDEX_NAME}' ({len(docs)} docs, model {MODEL_ID})..."
+    )
     result = await client.create_index(INDEX_NAME, docs, MODEL_ID)
     print(
         f"      done (job: {result.job_id}, index: {result.index_name}, docs: {result.doc_count})"
@@ -174,16 +176,15 @@ async def main() -> None:
         try:
             await client.load_index(INDEX_NAME)
             r = await client.query(
-                INDEX_NAME, "total income wages and taxes withheld", QueryOptions(top_k=3)
+                INDEX_NAME,
+                "total income wages and taxes withheld",
+                QueryOptions(top_k=3),
             )
             rdocs = getattr(r, "docs", None) or []
             hits = len(rdocs)
             latency = getattr(r, "time_taken_ms", None)
             pages = sorted(
-                {
-                    (getattr(d, "metadata", {}) or {}).get("page", "?")
-                    for d in rdocs
-                }
+                {(getattr(d, "metadata", {}) or {}).get("page", "?") for d in rdocs}
             )
             if hits:
                 print(

@@ -32,7 +32,9 @@ class _SingleSegmentStream(minimax.tts.SynthesizeStream):
     outside the per-sentence loop so only one segment is ever open.
     """
 
-    async def _run(self, emitter: tts.AudioEmitter) -> None:  # pragma: no cover  (network streaming; integration-tested live)
+    async def _run(
+        self, emitter: tts.AudioEmitter
+    ) -> None:  # pragma: no cover  (network streaming; integration-tested live)
         emitter.initialize(
             request_id=utils.shortuuid(),
             sample_rate=self._opts.sample_rate,

@@ -1,0 +1,48 @@
+name: CI
+
+# Runs on every push to main and on every pull request (including from
+# contributors), so the test suite and the 95% coverage gate guard every merge.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  agent-py:
+    name: agent-py — lint, tests, coverage
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app/agent-py
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v1
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Ruff (lint)
+        run: uv run ruff check --output-format=github .
+
+      - name: Ruff (format check)
+        run: uv run ruff format --check --diff .
+
+      - name: Tests + coverage gate (offline; evals excluded)
+        env:
+          # The only tests that hit the network are the `eval`-marked ones, which
+          # are excluded by default. inference.TTS/LLM only need a key PRESENT at
+          # construct time, so these dummy values let CI pass with no secrets
+          # configured. If you add LIVEKIT_* repo secrets, they're used instead.
+          LIVEKIT_URL: ${{ secrets.LIVEKIT_URL || 'ws://dummy.local' }}
+          LIVEKIT_API_KEY: ${{ secrets.LIVEKIT_API_KEY || 'dummy-key' }}
+          LIVEKIT_API_SECRET: ${{ secrets.LIVEKIT_API_SECRET || 'dummy-secret' }}
+        run: uv run pytest --cov=src

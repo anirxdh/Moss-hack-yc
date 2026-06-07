@@ -35,7 +35,9 @@ class _FakeMoss:
 def _fake_docs():
     return [
         DocumentInfo(
-            id="d1", text="t", metadata={"type": "holding", "source": "rh", "symbol": "X"}
+            id="d1",
+            text="t",
+            metadata={"type": "holding", "source": "rh", "symbol": "X"},
         )
     ]
 
@@ -47,7 +49,9 @@ def _prep(monkeypatch, tmp_path):
     monkeypatch.setenv("MOSS_PROJECT_KEY", "pk")
     monkeypatch.setattr(ingest_robinhood, "load_profile", lambda p: {})
     monkeypatch.setattr(ingest_robinhood, "build_documents", lambda prof: _fake_docs())
-    monkeypatch.setattr(ingest_robinhood.sys, "argv", ["ingest_robinhood.py", str(prof)])
+    monkeypatch.setattr(
+        ingest_robinhood.sys, "argv", ["ingest_robinhood.py", str(prof)]
+    )
     return prof
 
 
@@ -78,7 +82,9 @@ def test_main_missing_creds_exits(monkeypatch, tmp_path) -> None:
     prof.write_text("{}")
     monkeypatch.delenv("MOSS_PROJECT_ID", raising=False)
     monkeypatch.delenv("MOSS_PROJECT_KEY", raising=False)
-    monkeypatch.setattr(ingest_robinhood.sys, "argv", ["ingest_robinhood.py", str(prof)])
+    monkeypatch.setattr(
+        ingest_robinhood.sys, "argv", ["ingest_robinhood.py", str(prof)]
+    )
     with pytest.raises(SystemExit):
         asyncio.run(ingest_robinhood.main())
 
@@ -87,7 +93,9 @@ def test_main_missing_profile_exits(monkeypatch, tmp_path) -> None:
     monkeypatch.setenv("MOSS_PROJECT_ID", "p")
     monkeypatch.setenv("MOSS_PROJECT_KEY", "pk")
     monkeypatch.setattr(
-        ingest_robinhood.sys, "argv", ["ingest_robinhood.py", str(tmp_path / "nope.json")]
+        ingest_robinhood.sys,
+        "argv",
+        ["ingest_robinhood.py", str(tmp_path / "nope.json")],
     )
     with pytest.raises(SystemExit):
         asyncio.run(ingest_robinhood.main())

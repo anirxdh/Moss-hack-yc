@@ -121,7 +121,9 @@ def test_poll_job_succeeds_after_processing(monkeypatch) -> None:
 
 def test_poll_job_failed_raises(monkeypatch) -> None:
     monkeypatch.setattr(
-        ingest_tax.requests, "get", lambda *a, **k: _Resp({"status": "Failed", "message": "bad"})
+        ingest_tax.requests,
+        "get",
+        lambda *a, **k: _Resp({"status": "Failed", "message": "bad"}),
     )
     monkeypatch.setattr(ingest_tax.time, "sleep", lambda *_: None)
     with pytest.raises(RuntimeError):
@@ -164,7 +166,9 @@ def test_main_happy_path(monkeypatch, tmp_path, capsys) -> None:
     pdf.write_bytes(b"%PDF")
     _set_env(monkeypatch)
     monkeypatch.setattr(ingest_tax, "submit_parse", lambda p, k: "JOB1")
-    monkeypatch.setattr(ingest_tax, "poll_job", lambda j, k: [{"chunk_id": "a", "embed": "hello"}])
+    monkeypatch.setattr(
+        ingest_tax, "poll_job", lambda j, k: [{"chunk_id": "a", "embed": "hello"}]
+    )
     monkeypatch.setattr(ingest_tax.sys, "argv", ["ingest_tax.py", str(pdf)])
 
     asyncio.run(ingest_tax.main())
@@ -194,14 +198,18 @@ def test_main_resume_job(monkeypatch, tmp_path) -> None:
 
 def test_main_missing_key_exits(monkeypatch, tmp_path) -> None:
     monkeypatch.delenv("UNSILOED_API_KEY", raising=False)
-    monkeypatch.setattr(ingest_tax.sys, "argv", ["ingest_tax.py", str(tmp_path / "x.pdf")])
+    monkeypatch.setattr(
+        ingest_tax.sys, "argv", ["ingest_tax.py", str(tmp_path / "x.pdf")]
+    )
     with pytest.raises(SystemExit):
         asyncio.run(ingest_tax.main())
 
 
 def test_main_missing_pdf_exits(monkeypatch, tmp_path) -> None:
     _set_env(monkeypatch)
-    monkeypatch.setattr(ingest_tax.sys, "argv", ["ingest_tax.py", str(tmp_path / "nope.pdf")])
+    monkeypatch.setattr(
+        ingest_tax.sys, "argv", ["ingest_tax.py", str(tmp_path / "nope.pdf")]
+    )
     with pytest.raises(SystemExit):
         asyncio.run(ingest_tax.main())
 
@@ -212,13 +220,17 @@ def test_main_no_usable_text_exits(monkeypatch, tmp_path) -> None:
     pdf.write_bytes(b"%PDF")
     _set_env(monkeypatch)
     monkeypatch.setattr(ingest_tax, "submit_parse", lambda p, k: "J")
-    monkeypatch.setattr(ingest_tax, "poll_job", lambda j, k: [{"embed": "  ", "segments": []}])
+    monkeypatch.setattr(
+        ingest_tax, "poll_job", lambda j, k: [{"embed": "  ", "segments": []}]
+    )
     monkeypatch.setattr(ingest_tax.sys, "argv", ["ingest_tax.py", str(pdf)])
     with pytest.raises(SystemExit):
         asyncio.run(ingest_tax.main())
 
 
-def test_main_delete_index_exception_is_tolerated(monkeypatch, tmp_path, capsys) -> None:
+def test_main_delete_index_exception_is_tolerated(
+    monkeypatch, tmp_path, capsys
+) -> None:
     """If the index doesn't exist yet, the best-effort delete is swallowed."""
     pdf = tmp_path / "tax.pdf"
     pdf.write_bytes(b"%PDF")
@@ -230,7 +242,9 @@ def test_main_delete_index_exception_is_tolerated(monkeypatch, tmp_path, capsys)
 
     monkeypatch.setattr(ingest_tax, "MossClient", _DelFails)
     monkeypatch.setattr(ingest_tax, "submit_parse", lambda p, k: "J")
-    monkeypatch.setattr(ingest_tax, "poll_job", lambda j, k: [{"chunk_id": "a", "embed": "hi"}])
+    monkeypatch.setattr(
+        ingest_tax, "poll_job", lambda j, k: [{"chunk_id": "a", "embed": "hi"}]
+    )
     monkeypatch.setattr(ingest_tax.sys, "argv", ["ingest_tax.py", str(pdf)])
 
     asyncio.run(ingest_tax.main())
@@ -249,7 +263,9 @@ def test_main_smoke_query_no_hits(monkeypatch, tmp_path, capsys) -> None:
 
     monkeypatch.setattr(ingest_tax, "MossClient", _NoHits)
     monkeypatch.setattr(ingest_tax, "submit_parse", lambda p, k: "J")
-    monkeypatch.setattr(ingest_tax, "poll_job", lambda j, k: [{"chunk_id": "a", "embed": "hi"}])
+    monkeypatch.setattr(
+        ingest_tax, "poll_job", lambda j, k: [{"chunk_id": "a", "embed": "hi"}]
+    )
     monkeypatch.setattr(ingest_tax.sys, "argv", ["ingest_tax.py", str(pdf)])
 
     asyncio.run(ingest_tax.main())

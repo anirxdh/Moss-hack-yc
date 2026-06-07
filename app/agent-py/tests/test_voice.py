@@ -185,12 +185,15 @@ async def test_minimax_international_endpoint_streams_audio() -> None:
     opts.base_url = minimax_patch.DEFAULT_MINIMAX_BASE_URL
 
     audio_bytes = 0
-    async with aiohttp.ClientSession() as session, session.post(
-        opts.get_http_url(),
-        json=opts.get_query_params(text="Hello from your AI CPA."),
-        headers=opts.get_http_header(),
-        timeout=aiohttp.ClientTimeout(total=30),
-    ) as resp:
+    async with (
+        aiohttp.ClientSession() as session,
+        session.post(
+            opts.get_http_url(),
+            json=opts.get_query_params(text="Hello from your AI CPA."),
+            headers=opts.get_http_header(),
+            timeout=aiohttp.ClientTimeout(total=30),
+        ) as resp,
+    ):
         assert resp.status == 200
         async for chunk in resp.content:
             if chunk[:5] == b"data:":
