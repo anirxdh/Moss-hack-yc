@@ -1,85 +1,57 @@
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @source "../node_modules/streamdown/dist/index.js";
 
 @custom-variant dark (&:is(.dark *));
 
-:root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
-
+/* ----------------------------------------------------------------------------
+   Warm cream "living-photos" palette. Applied to BOTH :root and .dark so the
+   product is always light/editorial regardless of the theme toggle.
+---------------------------------------------------------------------------- */
+:root,
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.269 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.371 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.439 0 0);
+  --radius: 1rem;
+  --background: #f7f5f0; /* warm cream/parchment */
+  --foreground: #14110d; /* near-black ink */
+  --card: #ffffff;
+  --card-foreground: #14110d;
+  --popover: #ffffff;
+  --popover-foreground: #14110d;
+  --primary: #14110d; /* solid black primary buttons */
+  --primary-foreground: #f7f5f0;
+  --secondary: #ece8df;
+  --secondary-foreground: #14110d;
+  --muted: #ece8df;
+  --muted-foreground: #6b655b;
+  --accent: #efe9dd;
+  --accent-foreground: #14110d;
+  --accent-warm: #b8845c; /* warm amber for small highlights */
+  --destructive: #b8484a;
+  --border: #e3ddd1;
+  --input: #e3ddd1;
+  --ring: #b8845c;
+  --chart-1: #b8845c;
+  --chart-2: #4a7a5a;
+  --chart-3: #6b655b;
+  --chart-4: #d9a560;
+  --chart-5: #9c9484;
+  --sidebar: #f7f5f0;
+  --sidebar-foreground: #14110d;
+  --sidebar-primary: #14110d;
+  --sidebar-primary-foreground: #f7f5f0;
+  --sidebar-accent: #ece8df;
+  --sidebar-accent-foreground: #14110d;
+  --sidebar-border: #e3ddd1;
+  --sidebar-ring: #b8845c;
 }
 
 @theme inline {
-  --font-sans:
-    var(--font-public-sans), ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
-    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-sans: 'Inter', var(--font-public-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono:
-    var(--font-commit-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    'Liberation Mono', 'Courier New', monospace;
+    var(--font-commit-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-display: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+  --font-serif: 'Instrument Serif', Georgia, serif;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -95,6 +67,7 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-accent-warm: var(--accent-warm);
   --color-destructive: var(--destructive);
   --color-border: var(--border);
   --color-input: var(--input);
@@ -116,9 +89,87 @@
 
 @layer base {
   * {
-    @apply border-foreground/20 outline-ring/50;
+    @apply border-foreground/15 outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: 'ss01', 'cv11';
+    letter-spacing: -0.01em;
+  }
+}
+
+/* Misty atmospheric backdrop (fixed, behind everything). */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(255, 250, 240, 0.6) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 50% at 30% 80%, rgba(184, 132, 92, 0.06) 0%, transparent 60%),
+    var(--background);
+}
+
+/* Editorial serif headline + sans eyebrow. */
+.headline {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.025em;
+  line-height: 1;
+  color: var(--foreground);
+}
+.eyebrow {
+  font-family: 'Inter', var(--font-public-sans), sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+/* Glassmorphic floating widget — the living-photos signature look. */
+.glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.9) inset,
+    0 4px 16px -4px rgba(20, 17, 13, 0.08),
+    0 20px 48px -16px rgba(20, 17, 13, 0.14);
+}
+
+/* Warm glow atmosphere for the /upload page. */
+.upload-atmosphere {
+  background:
+    radial-gradient(48rem 32rem at 50% -8%, rgba(184, 132, 92, 0.1), transparent 70%),
+    var(--background);
+}
+
+/* Entrance animations (transform/opacity only → 60fps). */
+.fade-up {
+  opacity: 0;
+  animation: cpa-fade-up 0.62s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.hero-fade-in {
+  opacity: 0;
+  animation: cpa-fade-up 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes cpa-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fade-up,
+  .hero-fade-in {
+    animation: none;
+    opacity: 1;
   }
 }
