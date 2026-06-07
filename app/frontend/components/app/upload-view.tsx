@@ -49,6 +49,7 @@ export function UploadView() {
           JSON.stringify({
             summary: data.summary,
             pdfBase64: data.pdfBase64,
+            redactedDocBase64: data.redactedDocBase64 ?? null,
             warnings: data.warnings ?? [],
           })
         );

@@ -3,6 +3,7 @@ import { aggregate, computeForm1040, summarize } from './_lib/compute';
 import { type UploadedDoc, extractDocuments } from './_lib/extract';
 import { fillForm1040 } from './_lib/fill-1040';
 import { persistGenerated1040 } from './_lib/persist';
+import { redactPdf } from './_lib/redact';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -76,10 +77,33 @@ export async function POST(req: Request) {
     const persisted = await persistGenerated1040(pdfBytes);
     warnings.push(...persisted.warnings);
 
+    // Visually redact the uploaded document (SSN / account & routing / EIN) for
+    // safe on-screen preview in the demo. Display-only; Moss keeps the raw text.
+    let redactedDocBase64: string | null = null;
+    try {
+      const { bytes: redacted, count } = await redactPdf(docs[0].bytes);
+      const b64 = Buffer.from(redacted).toString('base64');
+      if (b64.length <= 3_500_000) {
+        redactedDocBase64 = b64;
+      } else {
+        warnings.push(
+          'Uploaded document is large — skipped the redacted preview; showing the generated 1040.'
+        );
+      }
+      if (count === 0) {
+        warnings.push('No SSN/account/EIN patterns found to redact in the uploaded document.');
+      }
+    } catch (err) {
+      warnings.push(
+        `Could not build a redacted preview of the uploaded document (${err instanceof Error ? err.message : 'unknown error'}).`
+      );
+    }
+
     return NextResponse.json({
       bypassed: false,
       summary,
       pdfBase64,
+      redactedDocBase64,
       s3Key: persisted.s3Key,
       indexed: persisted.indexed,
       warnings,

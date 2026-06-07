@@ -17,6 +17,10 @@ interface ReturnViewProps {
 interface GeneratedReturn {
   summary: Form1040Summary;
   pdfUrl: string;
+  // Redacted copy of the uploaded source doc (SSN/account/EIN greyed out) — what
+  // we show beside the live CPA so the demo never displays raw PII. null if the
+  // endpoint couldn't build one (then we fall back to the placeholder).
+  redactedDocUrl: string | null;
   warnings: string[];
 }
 
@@ -38,17 +42,26 @@ export function ReturnView({ appConfig }: ReturnViewProps) {
   useEffect(() => {
     const raw = sessionStorage.getItem('generated1040');
     if (!raw) return;
-    let url: string | null = null;
+    const urls: string[] = [];
+    const toBlobUrl = (b64: string | null | undefined): string | null => {
+      if (!b64) return null;
+      const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+      const u = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+      urls.push(u);
+      return u;
+    };
     try {
-      const { summary, pdfBase64, warnings } = JSON.parse(raw);
-      const bytes = Uint8Array.from(atob(pdfBase64), (c) => c.charCodeAt(0));
-      url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
-      setGenerated({ summary, pdfUrl: url, warnings: warnings ?? [] });
+      const { summary, pdfBase64, redactedDocBase64, warnings } = JSON.parse(raw);
+      const pdfUrl = toBlobUrl(pdfBase64);
+      const redactedDocUrl = toBlobUrl(redactedDocBase64);
+      if (pdfUrl) {
+        setGenerated({ summary, pdfUrl, redactedDocUrl, warnings: warnings ?? [] });
+      }
     } catch {
       /* ignore malformed payload */
     }
     return () => {
-      if (url) URL.revokeObjectURL(url);
+      for (const u of urls) URL.revokeObjectURL(u);
     };
   }, []);
 
@@ -67,7 +80,10 @@ export function ReturnView({ appConfig }: ReturnViewProps) {
     }
     return null;
   }, [mossEvents]);
-  const pdfSrc = citedPage ? `/tax-return.pdf#page=${citedPage}` : '/tax-return.pdf';
+  // Show the redacted upload (PII greyed out) beside the live CPA; fall back to
+  // the placeholder. Citation page-jumps still work on the blob URL.
+  const docBase = generated?.redactedDocUrl ?? '/tax-return.pdf';
+  const pdfSrc = citedPage ? `${docBase}#page=${citedPage}` : docBase;
 
   // Once the call is live, keep the tax document beside the live AI CPA
   // (voice + Olivia avatar) instead of taking over the full screen.
