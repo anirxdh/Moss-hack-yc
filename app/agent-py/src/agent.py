@@ -83,30 +83,68 @@ def build_tts():
     )
 
 
-# --- LLM (env-configurable so we can switch models/providers, e.g. to Qwen) ---
+# --- LLM (env-configurable: LiveKit Inference by default, or an OpenAI-compatible
+# gateway such as TrueFoundry governance / Qwen-DashScope) ---
 DEFAULT_LLM_MODEL = "openai/gpt-5.2-chat-latest"
 
 
-def build_llm() -> inference.LLM:
-    """Construct the agent LLM, fully env-configurable so we can switch to e.g.
-    Qwen with no code change:
+def _gateway_headers() -> dict[str, str]:
+    """Optional TrueFoundry governance headers for the gateway LLM path.
 
-    - LLM_MODEL    : model id (default gpt-5.2 via LiveKit Inference)
-    - LLM_PROVIDER : optional provider override (e.g. "cerebras" for Qwen)
-    - LLM_BASE_URL : optional custom gateway endpoint (e.g. a TrueFoundry gateway)
-    - LLM_API_KEY  : key for that gateway (only needed alongside LLM_BASE_URL)
+    - TRUEFOUNDRY_GUARDRAILS -> ``X-TFY-GUARDRAILS``: applies PII/PHI redaction
+      (and any other guardrail group) to LLM input AND output. This is how the
+      financial-data path is protected — redaction happens at the gateway.
+    - TRUEFOUNDRY_METADATA -> ``X-TFY-METADATA``: tags requests for the live
+      cost/latency dashboard.
+    - TRUEFOUNDRY_TTFT_TIMEOUT_MS -> ``x-tfy-ttft-timeout-ms``: fail over to a
+      backup model if the first token is slow, so the caller never hears dead air.
+    """
+    headers: dict[str, str] = {}
+    if os.getenv("TRUEFOUNDRY_GUARDRAILS"):
+        headers["X-TFY-GUARDRAILS"] = os.environ["TRUEFOUNDRY_GUARDRAILS"]
+    if os.getenv("TRUEFOUNDRY_METADATA"):
+        headers["X-TFY-METADATA"] = os.environ["TRUEFOUNDRY_METADATA"]
+    if os.getenv("TRUEFOUNDRY_TTFT_TIMEOUT_MS"):
+        headers["x-tfy-ttft-timeout-ms"] = os.environ["TRUEFOUNDRY_TTFT_TIMEOUT_MS"]
+    return headers
+
+
+def build_llm():
+    """Construct the agent LLM, fully env-configurable (no code change to switch):
+
+    - LLM_MODEL    : model id. Default gpt-5.2 via LiveKit Inference; for a gateway
+                     use that gateway's id (TrueFoundry: provider_account/model or
+                     a virtual model; DashScope: e.g. qwen-max).
+    - LLM_PROVIDER : provider override on LiveKit Inference (e.g. "cerebras").
+    - LLM_BASE_URL : OpenAI-compatible gateway URL. When set, the agent routes
+                     through it via the openai plugin (TrueFoundry governance, or
+                     Qwen/DashScope). TrueFoundry: https://gateway.truefoundry.ai
+    - LLM_API_KEY  : key for that gateway (the TrueFoundry PAT/VAT).
 
     With no overrides this runs on LiveKit Inference, billed through your LiveKit
     account, so no separate provider API key is required.
     """
-    kwargs: dict = {}
+    model = os.getenv("LLM_MODEL", DEFAULT_LLM_MODEL)
+    base_url = os.getenv("LLM_BASE_URL")
+    if base_url:
+        # OpenAI-compatible gateway path (TrueFoundry / Qwen-DashScope). Every
+        # LLM call goes through one governed endpoint; the optional X-TFY-*
+        # headers add PII redaction, dashboard metadata, and voice failover.
+        from livekit.plugins import openai
+
+        kwargs: dict = {"model": model, "base_url": base_url}
+        if os.getenv("LLM_API_KEY"):
+            kwargs["api_key"] = os.environ["LLM_API_KEY"]
+        headers = _gateway_headers()
+        if headers:
+            kwargs["extra_headers"] = headers
+        return openai.LLM(**kwargs)
+
+    # Default: LiveKit Inference.
+    kwargs = {}
     if os.getenv("LLM_PROVIDER"):
-        kwargs["provider"] = os.getenv("LLM_PROVIDER")
-    if os.getenv("LLM_BASE_URL"):
-        kwargs["base_url"] = os.getenv("LLM_BASE_URL")
-    if os.getenv("LLM_API_KEY"):
-        kwargs["api_key"] = os.getenv("LLM_API_KEY")
-    return inference.LLM(model=os.getenv("LLM_MODEL", DEFAULT_LLM_MODEL), **kwargs)
+        kwargs["provider"] = os.environ["LLM_PROVIDER"]
+    return inference.LLM(model=model, **kwargs)
 
 
 class Assistant(Agent):
