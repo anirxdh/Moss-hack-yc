@@ -9,6 +9,7 @@ import agent as agent_module
 
 _AVATAR_ENV = (
     "AVATAR_PROVIDER",
+    "SHOW_AVATAR",
     "TAVUS_API_KEY",
     "TAVUS_REPLICA_ID",
     "TAVUS_PERSONA_ID",
@@ -39,6 +40,16 @@ def test_build_avatar_default_is_none(monkeypatch) -> None:
 def test_build_avatar_off_is_none(monkeypatch) -> None:
     _clear(monkeypatch)
     monkeypatch.setenv("AVATAR_PROVIDER", "none")
+    assert agent_module.build_avatar() is None
+
+
+def test_build_avatar_show_false_forces_voice_only(monkeypatch) -> None:
+    """SHOW_AVATAR=false -> voice-only even with a provider + creds set."""
+    _clear(monkeypatch)
+    monkeypatch.setenv("SHOW_AVATAR", "false")
+    monkeypatch.setenv("AVATAR_PROVIDER", "tavus")
+    monkeypatch.setenv("TAVUS_API_KEY", "k")
+    monkeypatch.setenv("TAVUS_REPLICA_ID", "r1")
     assert agent_module.build_avatar() is None
 
 

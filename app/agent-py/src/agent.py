@@ -166,28 +166,36 @@ def build_llm():
 
 
 # --- Avatar (optional talking-head video; demo wow factor) ---
-# AVATAR_PROVIDER enables a talking-head avatar that lip-syncs the agent's voice
-# and publishes synced audio+video: "simli" (recommended, generous free tier) or
-# "tavus" (higher realism, smaller free tier). Off by default (voice-only); it
-# degrades to voice-only if creds are missing, so the demo never hard-fails.
+# Two env controls:
+#   SHOW_AVATAR     - master on/off (true/false, default true). Quick demo toggle:
+#                     set false to run voice-only without touching the provider.
+#   AVATAR_PROVIDER - which backend: "simli" (generous free tier) or "tavus"
+#                     (higher realism), or "none" for voice-only.
+# The avatar shows only when SHOW_AVATAR is true AND a provider + creds are set;
+# otherwise it degrades to voice-only, so the demo never hard-fails.
 DEFAULT_AVATAR_PROVIDER = "none"
 
 
 def build_avatar():
     """Return an avatar session if configured, else None (voice-only).
 
-    AVATAR_PROVIDER selects the backend:
-      - "none" (default): no avatar; the agent is voice-only.
-      - "simli" (recommended, generous free tier): needs SIMLI_API_KEY +
-        SIMLI_FACE_ID (SIMLI_EMOTION_ID optional).
-      - "tavus" (higher realism, smaller free tier): needs TAVUS_API_KEY +
-        TAVUS_REPLICA_ID + TAVUS_PERSONA_ID.
+    Two env controls:
+      - SHOW_AVATAR: master on/off (true/false, default true). SHOW_AVATAR=false
+        forces voice-only without touching AVATAR_PROVIDER — the quick demo toggle.
+      - AVATAR_PROVIDER selects the backend:
+        - "none" (default): no avatar; the agent is voice-only.
+        - "simli" (recommended, generous free tier): needs SIMLI_API_KEY +
+          SIMLI_FACE_ID (SIMLI_EMOTION_ID optional).
+        - "tavus" (higher realism, smaller free tier): needs TAVUS_API_KEY +
+          TAVUS_REPLICA_ID + TAVUS_PERSONA_ID.
 
     Any missing-creds or unknown-provider case returns None so the demo degrades
     to voice-only instead of crashing. The caller starts the returned session
     with ``avatar.start(session, room)`` before ``session.start(...)``; the
     avatar then routes the agent's audio and publishes the talking head.
     """
+    if os.getenv("SHOW_AVATAR", "true").strip().lower() in ("false", "0", "no", "off"):
+        return None
     provider = os.getenv("AVATAR_PROVIDER", DEFAULT_AVATAR_PROVIDER).lower()
     if provider in ("", "none", "off", "false"):
         return None
