@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { Check, Paperclip, Upload, X } from 'lucide-react';
 import { cn } from '@/lib/shadcn/utils';
 import type { TaxDoc } from './tax-documents';
 
@@ -49,15 +50,7 @@ export function DocSlot({ doc, file, onPick, onRemove, style }: DocSlotProps) {
             filled ? 'scale-100' : 'scale-0'
           )}
         >
-          <svg
-            viewBox="0 0 24 24"
-            className="size-3"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="3.5"
-          >
-            <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <Check className="size-3" strokeWidth={3.5} aria-hidden="true" />
         </span>
       </div>
 
@@ -66,35 +59,33 @@ export function DocSlot({ doc, file, onPick, onRemove, style }: DocSlotProps) {
 
       <div className="mt-3">
         {filled ? (
-          <div className="bg-background/60 flex items-center justify-between gap-2 rounded-lg px-2.5 py-1.5">
-            <span className="truncate text-xs">{file?.name}</span>
+          <div className="bg-background/70 border-border flex items-center gap-2 rounded-lg border px-2.5 py-1.5">
+            <Paperclip
+              className="text-muted-foreground size-3.5 shrink-0"
+              strokeWidth={2}
+              aria-hidden="true"
+            />
+            <span className="flex-1 truncate text-xs">{file?.name}</span>
             <button
               type="button"
               onClick={onRemove}
-              className="text-muted-foreground hover:text-destructive shrink-0 text-[10px] font-medium tracking-wide uppercase transition-colors"
+              aria-label={`Remove ${doc.code} file`}
+              className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 -mr-1 shrink-0 rounded-md p-1 transition-colors"
             >
-              Remove
+              <X className="size-3.5" strokeWidth={2.25} aria-hidden="true" />
             </button>
           </div>
         ) : (
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            className="border-foreground/20 text-muted-foreground hover:border-primary/50 hover:text-foreground flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed py-1.5 text-xs transition-colors"
+            className="border-border bg-secondary/40 text-muted-foreground hover:border-primary/40 hover:bg-secondary hover:text-foreground flex w-full items-center justify-center gap-2 rounded-lg border py-2 text-xs font-medium transition-all duration-200"
           >
-            <svg
-              viewBox="0 0 24 24"
-              className="size-3.5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path
-                d="M12 16V4m0 0L8 8m4-4l4 4M5 20h14"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <Upload
+              className="size-3.5 transition-transform duration-200 group-hover:-translate-y-0.5"
+              strokeWidth={2}
+              aria-hidden="true"
+            />
             Add file
           </button>
         )}
