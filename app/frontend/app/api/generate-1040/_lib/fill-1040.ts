@@ -88,7 +88,7 @@ export async function fillForm1040(form1040: Form1040): Promise<Uint8Array> {
 function drawDraftBanner(
   page: ReturnType<PDFDocument['getPages']>[number],
   font: PDFFont,
-  f: Form1040,
+  f: Form1040
 ): void {
   const r = f.refundOrOwe;
   const banner =

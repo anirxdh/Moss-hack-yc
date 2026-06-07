@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useTheme } from 'next-themes';
 import { useRouter } from 'next/navigation';
 import { useSessionContext } from '@livekit/components-react';
@@ -11,10 +12,46 @@ interface ReturnViewProps {
   appConfig: AppConfig;
 }
 
+interface GeneratedReturn {
+  summary: {
+    taxYear: number;
+    documentsRead: number;
+    refundOrOwe: { type: 'refund' | 'owe' | 'even'; amount: number };
+  };
+  pdfUrl: string;
+  warnings: string[];
+}
+
+function headline(r: GeneratedReturn['summary']['refundOrOwe']): string {
+  if (r.type === 'refund') return `Estimated refund: $${r.amount.toLocaleString('en-US')}`;
+  if (r.type === 'owe') return `Estimated amount owed: $${r.amount.toLocaleString('en-US')}`;
+  return 'Estimated balance: $0';
+}
+
 export function ReturnView({ appConfig }: ReturnViewProps) {
   const router = useRouter();
   const { isConnected, start } = useSessionContext();
   const { resolvedTheme } = useTheme();
+  const [generated, setGenerated] = useState<GeneratedReturn | null>(null);
+
+  useEffect(() => {
+    const raw = sessionStorage.getItem('generated1040');
+    if (!raw) return;
+    let url: string | null = null;
+    try {
+      const { summary, pdfBase64, warnings } = JSON.parse(raw);
+      const bytes = Uint8Array.from(atob(pdfBase64), (c) => c.charCodeAt(0));
+      url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+      setGenerated({ summary, pdfUrl: url, warnings: warnings ?? [] });
+    } catch {
+      /* ignore malformed payload */
+    }
+    return () => {
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, []);
+
+  const pdfSrc = generated?.pdfUrl ?? '/tax-return.pdf';
 
   // Once the call is live, keep the tax document beside the live AI CPA
   // (voice + Olivia avatar) instead of taking over the full screen.
@@ -24,7 +61,7 @@ export function ReturnView({ appConfig }: ReturnViewProps) {
         {/* Your tax document — stays visible next to the CPA while you talk */}
         <section className="bg-muted relative hidden overflow-hidden border-r lg:block">
           <iframe
-            src="/tax-return.pdf"
+            src={pdfSrc}
             title="Your tax return"
             className="absolute inset-0 h-full w-full bg-white"
           />
@@ -59,16 +96,33 @@ export function ReturnView({ appConfig }: ReturnViewProps) {
       {/* 1040 preview */}
       <section className="order-2 lg:order-1">
         <h1 className="text-2xl font-bold tracking-tight">Your 2025 tax return</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Showing the document you uploaded. Your generated 1040 will replace this soon.
-        </p>
+        {generated ? (
+          <div className="mt-1">
+            <p className="text-sm font-medium">{headline(generated.summary.refundOrOwe)}</p>
+            <p className="text-muted-foreground mt-1 text-xs">
+              Draft estimate (tax year {generated.summary.taxYear}) computed from{' '}
+              {generated.summary.documentsRead} document
+              {generated.summary.documentsRead === 1 ? '' : 's'}.
+            </p>
+            {generated.warnings.length > 0 && (
+              <ul className="text-muted-foreground mt-2 list-disc pl-4 text-xs">
+                {generated.warnings.map((w, i) => (
+                  <li key={i}>{w}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ) : (
+          <p className="text-muted-foreground mt-1 text-sm">
+            Showing the document you uploaded. Your generated 1040 will replace this soon.
+          </p>
+        )}
 
-        {/* The uploaded tax document, served locally. NOTE: /tax-return.pdf is
-            gitignored (contains PII) — each environment must place its own copy. */}
+        {/* Generated 1040 (or, before generation, the locally-served uploaded PDF). */}
         <div className="bg-muted mt-4 overflow-hidden rounded-xl border p-2">
           <iframe
-            src="/tax-return.pdf"
-            title="Your uploaded tax return"
+            src={pdfSrc}
+            title="Your tax return"
             className="h-[80vh] w-full rounded-md bg-white"
           />
         </div>

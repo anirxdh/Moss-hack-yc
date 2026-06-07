@@ -23,20 +23,40 @@ export function standardDeduction(status: FilingStatus): number {
 type Bracket = [number, number];
 const BRACKETS_2025: Record<FilingStatus, Bracket[]> = {
   single: [
-    [11925, 0.1], [48475, 0.12], [103350, 0.22], [197300, 0.24],
-    [250525, 0.32], [626350, 0.35], [Infinity, 0.37],
+    [11925, 0.1],
+    [48475, 0.12],
+    [103350, 0.22],
+    [197300, 0.24],
+    [250525, 0.32],
+    [626350, 0.35],
+    [Infinity, 0.37],
   ],
   married_separate: [
-    [11925, 0.1], [48475, 0.12], [103350, 0.22], [197300, 0.24],
-    [250525, 0.32], [375800, 0.35], [Infinity, 0.37],
+    [11925, 0.1],
+    [48475, 0.12],
+    [103350, 0.22],
+    [197300, 0.24],
+    [250525, 0.32],
+    [375800, 0.35],
+    [Infinity, 0.37],
   ],
   married_joint: [
-    [23850, 0.1], [96950, 0.12], [206700, 0.22], [394600, 0.24],
-    [501050, 0.32], [751600, 0.35], [Infinity, 0.37],
+    [23850, 0.1],
+    [96950, 0.12],
+    [206700, 0.22],
+    [394600, 0.24],
+    [501050, 0.32],
+    [751600, 0.35],
+    [Infinity, 0.37],
   ],
   head_of_household: [
-    [17000, 0.1], [64850, 0.12], [103350, 0.22], [197300, 0.24],
-    [250525, 0.32], [626350, 0.35], [Infinity, 0.37],
+    [17000, 0.1],
+    [64850, 0.12],
+    [103350, 0.22],
+    [197300, 0.24],
+    [250525, 0.32],
+    [626350, 0.35],
+    [Infinity, 0.37],
   ],
 };
 
@@ -63,7 +83,7 @@ const sum = (docs: ExtractedDoc[], pick: (d: ExtractedDoc) => number | null): nu
 
 export function aggregate(
   docs: ExtractedDoc[],
-  meta: Pick<ExtractionResult, 'taxpayerName' | 'filingStatusGuess'>,
+  meta: Pick<ExtractionResult, 'taxpayerName' | 'filingStatusGuess'>
 ): TaxInputs {
   const usable = docs.filter((d) => d.formType !== 'unknown');
   return {
@@ -109,7 +129,21 @@ export function computeForm1040(inp: TaxInputs): Form1040 {
     taxYear: 2025,
     filingStatus: inp.filingStatus,
     taxpayerName: inp.taxpayerName,
-    line1a, line2b, line3a, line3b, line7, line9, line11, line12,
-    line15, line16, line24, line25d, line33, line34, line37, refundOrOwe,
+    line1a,
+    line2b,
+    line3a,
+    line3b,
+    line7,
+    line9,
+    line11,
+    line12,
+    line15,
+    line16,
+    line24,
+    line25d,
+    line33,
+    line34,
+    line37,
+    refundOrOwe,
   };
 }

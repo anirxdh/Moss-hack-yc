@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
 import { PDFDocument } from 'pdf-lib';
+import { describe, expect, it } from 'vitest';
 import { fillForm1040 } from './fill-1040';
 import type { Form1040 } from './schema';
 

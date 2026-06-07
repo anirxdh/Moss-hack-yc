@@ -1,10 +1,6 @@
 import { z } from 'zod';
 
-export type FilingStatus =
-  | 'single'
-  | 'married_joint'
-  | 'married_separate'
-  | 'head_of_household';
+export type FilingStatus = 'single' | 'married_joint' | 'married_separate' | 'head_of_household';
 
 // Raw, transcribed-only values. The model fills these; it never computes.
 const Money = z.number().nullable();

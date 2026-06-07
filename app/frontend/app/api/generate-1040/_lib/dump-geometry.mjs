@@ -1,11 +1,11 @@
 // Discovery: correlate AcroForm field rectangles with the page's text labels by
 // Y position, so we can map opaque field names to 1040 line numbers reliably.
 // Run from app/frontend:  node app/api/generate-1040/_lib/dump-geometry.mjs
+import { readFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { PDFDocument } from 'pdf-lib';
 import { getDocumentProxy } from 'unpdf';
-import { readFile } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const bytes = new Uint8Array(await readFile(join(here, '..', 'f1040-2025.pdf')));
@@ -37,7 +37,11 @@ for (let p = 1; p <= pdf.numPages; p++) {
   const content = await page.getTextContent();
   labelsByPage[p - 1] = content.items
     .filter((it) => it.str && it.str.trim())
-    .map((it) => ({ x: Math.round(it.transform[4]), y: Math.round(it.transform[5]), str: it.str.trim() }));
+    .map((it) => ({
+      x: Math.round(it.transform[4]),
+      y: Math.round(it.transform[5]),
+      str: it.str.trim(),
+    }));
 }
 
 // For each amount field (right column, x > 430) on pages 0/1, print the nearest

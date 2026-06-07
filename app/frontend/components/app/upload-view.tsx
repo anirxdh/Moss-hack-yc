@@ -10,6 +10,36 @@ import { CORE_DOCS, OPTIONAL_CATEGORIES } from './tax-documents';
 export function UploadView() {
   const router = useRouter();
   const [files, setFiles] = useState<Record<string, File>>({});
+  const [busy, setBusy] = useState(false);
+
+  const onGenerate = async () => {
+    setBusy(true);
+    try {
+      const fd = new FormData();
+      for (const [id, file] of Object.entries(files)) {
+        fd.append('files', file);
+        fd.append('docIds', id);
+      }
+      const res = await fetch('/api/generate-1040', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data?.bypassed || !data?.pdfBase64) {
+        sessionStorage.removeItem('generated1040');
+      } else {
+        sessionStorage.setItem(
+          'generated1040',
+          JSON.stringify({
+            summary: data.summary,
+            pdfBase64: data.pdfBase64,
+            warnings: data.warnings ?? [],
+          })
+        );
+      }
+    } catch {
+      sessionStorage.removeItem('generated1040');
+    } finally {
+      router.push('/return');
+    }
+  };
 
   const onPick = (id: string, file: File) => setFiles((prev) => ({ ...prev, [id]: file }));
   const onRemove = (id: string) =>
@@ -103,10 +133,11 @@ export function UploadView() {
           </span>
           <Button
             size="lg"
-            onClick={() => router.push('/return')}
+            onClick={onGenerate}
+            disabled={busy}
             className="rounded-full font-mono text-xs font-bold tracking-wider uppercase"
           >
-            Generate 1040
+            {busy ? 'Generating…' : 'Generate 1040'}
           </Button>
         </div>
       </div>

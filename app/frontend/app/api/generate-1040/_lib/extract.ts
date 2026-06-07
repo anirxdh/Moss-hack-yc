@@ -1,5 +1,5 @@
 import { extractText, getDocumentProxy } from 'unpdf';
-import { ExtractionSchema, type ExtractionResult } from './schema';
+import { type ExtractionResult, ExtractionSchema } from './schema';
 
 export interface UploadedDoc {
   docId: string; // user-claimed type, e.g. "w2"
@@ -96,7 +96,7 @@ export async function extractDocuments(docs: UploadedDoc[]): Promise<ExtractOutc
     const text = await readPdfText(d.bytes);
     if (text.length < MIN_TEXT_CHARS) {
       warnings.push(
-        `"${d.name}" looks scanned or image-only — couldn't read its text, so it was not included.`,
+        `"${d.name}" looks scanned or image-only — couldn't read its text, so it was not included.`
       );
       continue;
     }
@@ -109,15 +109,14 @@ export async function extractDocuments(docs: UploadedDoc[]): Promise<ExtractOutc
 
   if (!apiKey()) {
     warnings.push(
-      'No QWEN_API_KEY configured — returning empty extraction (the form will compute from zeros).',
+      'No QWEN_API_KEY configured — returning empty extraction (the form will compute from zeros).'
     );
     return { result: EMPTY, warnings };
   }
 
   const prompt = readable
     .map(
-      (d, i) =>
-        `=== DOCUMENT ${i + 1} (user labeled: ${d.docId}, file: ${d.name}) ===\n${d.text}`,
+      (d, i) => `=== DOCUMENT ${i + 1} (user labeled: ${d.docId}, file: ${d.name}) ===\n${d.text}`
     )
     .join('\n\n');
 
@@ -131,7 +130,7 @@ export async function extractDocuments(docs: UploadedDoc[]): Promise<ExtractOutc
     return { result: EMPTY, warnings };
   } catch (err) {
     warnings.push(
-      `Extraction model call failed (${err instanceof Error ? err.message : 'unknown error'}); the form was computed from zeros.`,
+      `Extraction model call failed (${err instanceof Error ? err.message : 'unknown error'}); the form was computed from zeros.`
     );
     return { result: EMPTY, warnings };
   }

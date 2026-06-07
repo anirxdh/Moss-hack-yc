@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { standardDeduction, taxFromBrackets, aggregate, computeForm1040 } from './compute';
+import { describe, expect, it } from 'vitest';
+import { aggregate, computeForm1040, standardDeduction, taxFromBrackets } from './compute';
 import type { ExtractedDoc, TaxInputs } from './schema';
 
 const blankDoc = (over: Partial<ExtractedDoc>): ExtractedDoc => ({
@@ -49,14 +49,16 @@ describe('aggregate', () => {
         blankDoc({ formType: 'W-2', wages: 30000, fedWithholding: 2000 }),
         blankDoc({ formType: 'W-2', wages: 20000, fedWithholding: 1500 }),
       ],
-      { taxpayerName: 'Jane Q', filingStatusGuess: 'single' },
+      { taxpayerName: 'Jane Q', filingStatusGuess: 'single' }
     );
     expect(got.wages).toBe(50000);
     expect(got.fedWithholding).toBe(3500);
     expect(got.filingStatus).toBe('single');
   });
   it('defaults filing status to single when no guess', () => {
-    expect(aggregate([], { taxpayerName: null, filingStatusGuess: null }).filingStatus).toBe('single');
+    expect(aggregate([], { taxpayerName: null, filingStatusGuess: null }).filingStatus).toBe(
+      'single'
+    );
   });
   it('ignores unknown-form documents', () => {
     const got = aggregate([blankDoc({ formType: 'unknown', wages: 99999 })], {
