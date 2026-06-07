@@ -20,6 +20,7 @@ dependencies = [
 dev = [
     "pytest",
     "pytest-asyncio",
+    "pytest-cov>=7.1.0",
     "ruff",
 ]
 
@@ -37,6 +38,23 @@ where = ["src"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+# Default run excludes the network-bound LLM evals. Run them with: pytest -m eval
+addopts = "-m 'not eval'"
+markers = [
+    "eval: LLM-judged evaluation tests (require network / LiveKit Inference)",
+]
+
+[tool.coverage.run]
+source = ["src"]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 95
+# Integration glue is validated by running the agent live, not by unit tests.
+exclude_also = [
+    "if __name__ == .__main__.:",
+    "raise TimeoutError",
+]
 
 [tool.ruff]
 line-length = 88

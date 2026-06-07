@@ -5,6 +5,10 @@ from livekit.agents import AgentSession, inference, llm, mock_tools
 
 from agent import Assistant
 
+# These are LLM-judged evals: they hit LiveKit Inference (network) and cost
+# tokens, so they're excluded from the default/coverage run. Run with: pytest -m eval
+pytestmark = pytest.mark.eval
+
 
 def _judge_llm() -> llm.LLM:
     return inference.LLM(model="openai/gpt-4.1-mini")

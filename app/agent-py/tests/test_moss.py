@@ -177,3 +177,42 @@ async def test_recall_facts_filters_by_user_id(stub_moss) -> None:
 
     # recall_facts also surfaces context to the frontend panel.
     assert len(room.local_participant.published) == 1
+
+
+async def test_on_enter_preloads_both_indexes(stub_moss) -> None:
+    """on_enter warms the knowledge and memory indexes."""
+    assistant = Assistant(user_id=USER_ID)
+    await assistant.on_enter()
+    assert agent_module.KNOWLEDGE_INDEX in assistant._moss.load_index_calls
+    assert agent_module.MEMORY_INDEX in assistant._moss.load_index_calls
+
+
+async def test_search_knowledge_no_results_refuses(stub_moss) -> None:
+    """No retrieved docs -> the grounded 'not found' message (the refusal beat)."""
+    assistant = Assistant(user_id=USER_ID)
+    assistant._moss.query_result = _FakeSearchResult([])
+    result = await assistant.search_knowledge(None, "anything")
+    assert "No relevant" in result
+
+
+async def test_recall_facts_no_results(stub_moss) -> None:
+    """Empty memory -> a 'nothing remembered' reply, not a fabrication."""
+    assistant = Assistant(user_id=USER_ID)
+    assistant._moss.query_result = _FakeSearchResult([])
+    result = await assistant.recall_facts(None, "what is my name?")
+    assert "don't have anything" in result.lower()
+
+
+async def test_publish_context_omits_missing_score_and_metadata(stub_moss) -> None:
+    """A doc with no score/metadata publishes a minimal, well-formed match."""
+    room = _FakeRoom()
+    assistant = Assistant(room=room, user_id=USER_ID)
+    assistant._moss.query_result = _FakeSearchResult(
+        [_FakeDoc("plain text", score=None, metadata=None)]
+    )
+    await assistant.search_knowledge(None, "q")
+    payload = json.loads(room.local_participant.published[0][0].decode("utf-8"))
+    match = payload["data"]["matches"][0]
+    assert match["text"] == "plain text"
+    assert "score" not in match
+    assert "metadata" not in match

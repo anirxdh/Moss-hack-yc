@@ -310,7 +310,7 @@ class Assistant(Agent):
 server = AgentServer()
 
 
-def prewarm(proc: JobProcess):
+def prewarm(proc: JobProcess):  # pragma: no cover  (loads the Silero VAD model)
     proc.userdata["vad"] = silero.VAD.load()
 
 
@@ -320,7 +320,7 @@ server.setup_fnc = prewarm
 # Keep the registered dispatch name as "agent-py": the frontend (Task 6) sets
 # AGENT_NAME=agent-py to dispatch explicitly to this worker. Do not rename.
 @server.rtc_session(agent_name="agent-py")
-async def my_agent(ctx: JobContext):
+async def my_agent(ctx: JobContext):  # pragma: no cover  (LiveKit worker entrypoint; integration-tested by running the agent)
     # Logging setup
     # Add any other context you want in all log entries here
     ctx.log_context_fields = {
