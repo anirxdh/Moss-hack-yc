@@ -40,7 +40,7 @@ function Branch({ side }: { side: 'left' | 'right' }) {
   );
 }
 
-export function LandingView({ companyName = 'Moss' }: LandingViewProps) {
+export function LandingView({ companyName = 'Tax It Easy' }: LandingViewProps) {
   const router = useRouter();
 
   return (

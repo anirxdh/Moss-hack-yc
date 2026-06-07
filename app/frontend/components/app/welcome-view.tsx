@@ -34,7 +34,7 @@ export const WelcomeView = ({
         <WelcomeImage />
 
         <p className="text-foreground max-w-prose pt-1 leading-6 font-medium">
-          Chat live with your AI CPA
+          Chat live with Tax It Easy
         </p>
 
         <Button

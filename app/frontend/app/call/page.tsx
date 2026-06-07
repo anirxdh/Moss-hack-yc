@@ -21,7 +21,7 @@ export default function CallPage() {
               <span className="bg-accent-warm/15 absolute inset-3 rounded-full" />
               <span className="from-accent-warm relative size-16 rounded-full bg-gradient-to-br to-[#7d5536] shadow-[0_12px_32px_-8px_rgba(184,132,92,0.6)]" />
             </div>
-            <p className="eyebrow mt-6">Live · Moss AI CPA</p>
+            <p className="eyebrow mt-6">Live · Tax It Easy</p>
             <h1 className="headline mt-3 text-4xl sm:text-5xl">Talking through your return</h1>
             <p className="text-muted-foreground mt-3 text-sm">Listening&hellip;</p>
           </div>
