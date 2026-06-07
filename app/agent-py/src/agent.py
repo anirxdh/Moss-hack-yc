@@ -148,9 +148,10 @@ def build_llm():
 
 
 # --- Avatar (optional talking-head video; demo wow factor) ---
-# AVATAR_PROVIDER=tavus enables a Tavus avatar that lip-syncs the agent's voice
-# and publishes synced audio+video to the room. Off by default (voice-only), and
-# it degrades to voice-only if creds are missing, so the demo never hard-fails.
+# AVATAR_PROVIDER enables a talking-head avatar that lip-syncs the agent's voice
+# and publishes synced audio+video: "simli" (recommended, generous free tier) or
+# "tavus" (higher realism, smaller free tier). Off by default (voice-only); it
+# degrades to voice-only if creds are missing, so the demo never hard-fails.
 DEFAULT_AVATAR_PROVIDER = "none"
 
 
@@ -159,18 +160,35 @@ def build_avatar():
 
     AVATAR_PROVIDER selects the backend:
       - "none" (default): no avatar; the agent is voice-only.
-      - "tavus": a Tavus talking-head. Needs TAVUS_API_KEY (read from env by the
-        plugin) plus TAVUS_REPLICA_ID and TAVUS_PERSONA_ID. If TAVUS_API_KEY is
-        missing, returns None so the demo degrades to voice-only instead of
-        crashing.
+      - "simli" (recommended, generous free tier): needs SIMLI_API_KEY +
+        SIMLI_FACE_ID (SIMLI_EMOTION_ID optional).
+      - "tavus" (higher realism, smaller free tier): needs TAVUS_API_KEY +
+        TAVUS_REPLICA_ID + TAVUS_PERSONA_ID.
 
-    The caller starts the returned session with ``avatar.start(session, room)``
-    before ``session.start(...)``; the avatar then routes the agent's audio and
-    publishes the talking head. Returns None -> the agent stays voice-only.
+    Any missing-creds or unknown-provider case returns None so the demo degrades
+    to voice-only instead of crashing. The caller starts the returned session
+    with ``avatar.start(session, room)`` before ``session.start(...)``; the
+    avatar then routes the agent's audio and publishes the talking head.
     """
     provider = os.getenv("AVATAR_PROVIDER", DEFAULT_AVATAR_PROVIDER).lower()
     if provider in ("", "none", "off", "false"):
         return None
+    if provider == "simli":
+        if not (os.getenv("SIMLI_API_KEY") and os.getenv("SIMLI_FACE_ID")):
+            logger.warning(
+                "AVATAR_PROVIDER=simli but SIMLI_API_KEY/SIMLI_FACE_ID are unset; "
+                "running voice-only."
+            )
+            return None
+        from livekit.plugins import simli
+
+        config_kwargs: dict = {
+            "api_key": os.environ["SIMLI_API_KEY"],
+            "face_id": os.environ["SIMLI_FACE_ID"],
+        }
+        if os.getenv("SIMLI_EMOTION_ID"):
+            config_kwargs["emotion_id"] = os.environ["SIMLI_EMOTION_ID"]
+        return simli.AvatarSession(simli_config=simli.SimliConfig(**config_kwargs))
     if provider == "tavus":
         if not os.getenv("TAVUS_API_KEY"):
             logger.warning(
@@ -187,6 +205,19 @@ def build_avatar():
         return tavus.AvatarSession(**kwargs)
     logger.warning("Unknown AVATAR_PROVIDER=%r; running voice-only.", provider)
     return None
+
+
+def _avatar_enabled(metadata: dict) -> bool:
+    """Whether THIS session wants the avatar, from the frontend's dispatch metadata.
+
+    The frontend has an on/off toggle and sends {"avatar": true|false} so you can
+    run voice-only during testing and not burn avatar credits. Defaults to True
+    when unspecified (then AVATAR_PROVIDER/creds decide). Accepts bool or string.
+    """
+    val = metadata.get("avatar", True)
+    if isinstance(val, bool):
+        return val
+    return str(val).strip().lower() in ("1", "true", "yes", "on")
 
 
 class Assistant(Agent):
@@ -420,10 +451,12 @@ async def my_agent(
     # back to DEFAULT_USER_ID. Parsed before ctx.connect() to stay off the
     # connection critical path.
     user_id = DEFAULT_USER_ID
+    avatar_on = True
     if ctx.job.metadata:
         try:
             meta = json.loads(ctx.job.metadata)
             user_id = meta.get("user_id", DEFAULT_USER_ID)
+            avatar_on = _avatar_enabled(meta)
         except json.JSONDecodeError:
             logger.warning("ctx.job.metadata was not valid JSON; using default user_id")
 
@@ -449,10 +482,14 @@ async def my_agent(
     # Optional talking-head avatar (Tavus). Started before the session per the
     # LiveKit pattern: the avatar worker joins the room and publishes the agent's
     # voice as synced audio+video. Voice-only if disabled or creds are missing.
-    avatar = build_avatar()
+    # The frontend toggle (dispatch metadata "avatar") can force voice-only to
+    # save avatar credits during testing, regardless of AVATAR_PROVIDER.
+    avatar = build_avatar() if avatar_on else None
     if avatar:
         await avatar.start(session, room=ctx.room)
         logger.info("AI CPA: avatar started (%s)", os.getenv("AVATAR_PROVIDER"))
+    elif not avatar_on:
+        logger.info("AI CPA: avatar disabled by client toggle; voice-only")
 
     # Start the session, which initializes the voice pipeline and warms up the models
     await session.start(

@@ -12,6 +12,9 @@ _AVATAR_ENV = (
     "TAVUS_API_KEY",
     "TAVUS_REPLICA_ID",
     "TAVUS_PERSONA_ID",
+    "SIMLI_API_KEY",
+    "SIMLI_FACE_ID",
+    "SIMLI_EMOTION_ID",
 )
 
 
@@ -88,3 +91,63 @@ async def test_build_avatar_tavus_constructs_real(monkeypatch) -> None:
         avatar = agent_module.build_avatar()
 
     assert isinstance(avatar, tavus.AvatarSession)
+
+
+# --------------------------------------------------------------------------- #
+# Simli backend
+# --------------------------------------------------------------------------- #
+def test_build_avatar_simli_without_creds_falls_back(monkeypatch) -> None:
+    """simli requested but no SIMLI_API_KEY/SIMLI_FACE_ID -> voice-only."""
+    _clear(monkeypatch)
+    monkeypatch.setenv("AVATAR_PROVIDER", "simli")
+    assert agent_module.build_avatar() is None
+
+
+def test_build_avatar_simli_with_creds(monkeypatch) -> None:
+    """simli + creds -> a Simli AvatarSession built from SimliConfig(face_id...)."""
+    _clear(monkeypatch)
+    monkeypatch.setenv("AVATAR_PROVIDER", "simli")
+    monkeypatch.setenv("SIMLI_API_KEY", "k")
+    monkeypatch.setenv("SIMLI_FACE_ID", "f1")
+    monkeypatch.setenv("SIMLI_EMOTION_ID", "e1")
+    from livekit.plugins import simli
+
+    monkeypatch.setattr(simli, "AvatarSession", _SpyAvatar)
+
+    avatar = agent_module.build_avatar()
+
+    assert isinstance(avatar, _SpyAvatar)
+    assert avatar.kwargs["simli_config"].face_id == "f1"
+    assert avatar.kwargs["simli_config"].emotion_id == "e1"
+
+
+async def test_build_avatar_simli_constructs_real(monkeypatch) -> None:
+    """Real Simli AvatarSession constructs (catches plugin signature drift)."""
+    _clear(monkeypatch)
+    monkeypatch.setenv("AVATAR_PROVIDER", "simli")
+    monkeypatch.setenv("SIMLI_API_KEY", "k")
+    monkeypatch.setenv("SIMLI_FACE_ID", "f1")
+    from livekit.agents import utils
+    from livekit.plugins import simli
+
+    async with utils.http_context.open():
+        avatar = agent_module.build_avatar()
+
+    assert isinstance(avatar, simli.AvatarSession)
+
+
+# --------------------------------------------------------------------------- #
+# Frontend on/off toggle (dispatch metadata "avatar")
+# --------------------------------------------------------------------------- #
+def test_avatar_enabled_defaults_true_when_unset() -> None:
+    assert agent_module._avatar_enabled({}) is True
+
+
+def test_avatar_enabled_respects_false_bool() -> None:
+    assert agent_module._avatar_enabled({"avatar": False}) is False
+
+
+def test_avatar_enabled_respects_string_flags() -> None:
+    assert agent_module._avatar_enabled({"avatar": "true"}) is True
+    assert agent_module._avatar_enabled({"avatar": "false"}) is False
+    assert agent_module._avatar_enabled({"avatar": "off"}) is False

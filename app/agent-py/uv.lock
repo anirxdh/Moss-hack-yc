@@ -19,6 +19,7 @@ dependencies = [
     { name = "livekit-plugins-ai-coustics" },
     { name = "livekit-plugins-minimax" },
     { name = "livekit-plugins-openai" },
+    { name = "livekit-plugins-simli" },
     { name = "livekit-plugins-tavus" },
     { name = "moss" },
     { name = "python-dotenv" },
@@ -38,6 +39,7 @@ requires-dist = [
     { name = "livekit-plugins-ai-coustics", specifier = "~=0.2" },
     { name = "livekit-plugins-minimax", specifier = ">=1.2.9" },
     { name = "livekit-plugins-openai", specifier = ">=1.5.16" },
+    { name = "livekit-plugins-simli", specifier = ">=1.5.16" },
     { name = "livekit-plugins-tavus", specifier = ">=1.5.16" },
     { name = "moss", specifier = ">=1.4" },
     { name = "python-dotenv" },
@@ -1549,6 +1551,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/25/10/773b749002bd42575c98dd17256dbcd88bf6ad6d6e5b6258821543a85098/livekit_plugins_silero-1.5.16.tar.gz", hash = "sha256:c15742e648b6e024c667fd7f96bae3335440d8a57c5ca7cbcbc723d9e8b3fbcd", size = 1955907, upload-time = "2026-06-01T20:54:17.857Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/26/72/91dee745825a66f2c9eba34bff42e8a9cac7d18b2c932cd32c6a5985c888/livekit_plugins_silero-1.5.16-py3-none-any.whl", hash = "sha256:a3e572c47cfb4e21cdce51df54bb63cc7de8948ffed6985ab6b36200b26c1987", size = 3903908, upload-time = "2026-06-01T20:54:16.277Z" },
+]
+
+[[package]]
+name = "livekit-plugins-simli"
+version = "1.5.16"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "livekit-agents" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/62/8e/9ba35f0cca79287fe3b8db5ec7a3fed94e345183de2e31573d68fd6ae8e5/livekit_plugins_simli-1.5.16.tar.gz", hash = "sha256:9dba0a6232d58ee1b2f9278ce3fba0046834b46a9e3c82c4a8569d3f51e2971e", size = 5181, upload-time = "2026-06-01T20:54:18.344Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/22/45/f32b8634416737cfeaf2acf77ee5f0c318e113d619cbacd08da0f4d4a50d/livekit_plugins_simli-1.5.16-py3-none-any.whl", hash = "sha256:87791df62c94c1ace831b949a1e7f55d8759767633d635ba549b49e1e7c209f1", size = 5274, upload-time = "2026-06-01T20:54:17.353Z" },
 ]
 
 [[package]]
