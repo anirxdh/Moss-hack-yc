@@ -44,9 +44,9 @@ export const APP_CONFIG_DEFAULTS: AppConfig = {
   isPreConnectBufferEnabled: true,
 
   logo: '/lk-logo.svg',
-  accent: '#1f7a4d',
+  accent: '#14110d',
   logoDark: '/lk-logo-dark.svg',
-  accentDark: '#74d39e',
+  accentDark: '#14110d',
   startButtonText: 'Talk to your CPA',
 
   // optional: audio visualization configuration
