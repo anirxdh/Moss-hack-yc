@@ -40,12 +40,14 @@ DEFAULT_USER_ID = "user_1"
 
 # --- Voice (TTS) ---
 # TTS_PROVIDER selects the voice backend:
-#   - "cartesia" (default for now): Cartesia via LiveKit Inference. Stable.
-#   - "minimax": MiniMax (the sponsor voice). Switch back with TTS_PROVIDER=minimax
-#     once the plugin's multi-segment bug is resolved (livekit-plugins-minimax
-#     1.2.9 + agents 1.5.x crashes on multi-sentence replies with
-#     "start_segment() called before the previous segment was ended").
-DEFAULT_TTS_PROVIDER = "cartesia"
+#   - "minimax" (default): MiniMax, the sponsor voice. Uses the single-segment
+#     patch (src/minimax_patch.py), which targets MiniMax's INTERNATIONAL
+#     endpoint (api.minimaxi.chat) and emits one audio segment per turn. Needs
+#     MINIMAX_API_KEY + MINIMAX_GROUP_ID.
+#   - "cartesia": Cartesia via LiveKit Inference (no extra key). Stable; also
+#     used automatically when MiniMax creds are missing, so a fresh clone or a
+#     misconfigured deploy degrades to a working voice instead of crashing.
+DEFAULT_TTS_PROVIDER = "minimax"
 DEFAULT_TTS_MODEL = "speech-02-turbo"  # MiniMax model
 DEFAULT_TTS_VOICE = "presenter_female"  # MiniMax voice (override via MINIMAX_TTS_VOICE)
 CARTESIA_TTS_MODEL = "cartesia/sonic-3"
@@ -55,19 +57,25 @@ CARTESIA_TTS_VOICE = "9626c31c-bec5-4cca-baa8-f8ba9e84c8bc"
 def build_tts():
     """Construct the agent TTS. TTS_PROVIDER picks the backend.
 
-    - "cartesia" (default): inference.TTS via LiveKit Inference (no extra key).
-    - "minimax": minimax.TTS (needs MINIMAX_API_KEY + MINIMAX_GROUP_ID),
-      model/voice via MINIMAX_TTS_MODEL / MINIMAX_TTS_VOICE.
+    - "minimax" (default): PatchedMinimaxTTS (needs MINIMAX_API_KEY +
+      MINIMAX_GROUP_ID; model/voice via MINIMAX_TTS_MODEL / MINIMAX_TTS_VOICE).
+      Falls back to Cartesia if those creds are missing.
+    - "cartesia": inference.TTS via LiveKit Inference (no extra key).
     """
     provider = os.getenv("TTS_PROVIDER", DEFAULT_TTS_PROVIDER).lower()
     if provider == "minimax":
-        # Stock minimax 1.2.9 crashes on multi-sentence replies; use the
-        # single-segment patch (src/minimax_patch.py).
-        from minimax_patch import PatchedMinimaxTTS
+        if os.getenv("MINIMAX_API_KEY") and os.getenv("MINIMAX_GROUP_ID"):
+            # The patch fixes two stock-plugin bugs: the China-only endpoint
+            # (no audio for international accounts) and the multi-segment crash.
+            from minimax_patch import PatchedMinimaxTTS
 
-        return PatchedMinimaxTTS(
-            model=os.getenv("MINIMAX_TTS_MODEL", DEFAULT_TTS_MODEL),
-            voice_id=os.getenv("MINIMAX_TTS_VOICE", DEFAULT_TTS_VOICE),
+            return PatchedMinimaxTTS(
+                model=os.getenv("MINIMAX_TTS_MODEL", DEFAULT_TTS_MODEL),
+                voice_id=os.getenv("MINIMAX_TTS_VOICE", DEFAULT_TTS_VOICE),
+            )
+        logger.warning(
+            "TTS_PROVIDER=minimax but MINIMAX_API_KEY/MINIMAX_GROUP_ID are unset; "
+            "falling back to Cartesia for this run."
         )
     return inference.TTS(
         model=os.getenv("CARTESIA_TTS_MODEL", CARTESIA_TTS_MODEL),

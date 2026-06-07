@@ -16,6 +16,7 @@ file and switch ``build_tts`` back to ``minimax.TTS``.
 from __future__ import annotations
 
 import json
+import os
 
 import aiohttp
 from livekit.agents import tts, utils
@@ -69,8 +70,22 @@ class _SingleSegmentStream(minimax.tts.SynthesizeStream):
         emitter.end_segment()
 
 
+# The stock plugin hardcodes api.minimax.chat — MiniMax's CHINA endpoint, which
+# returns HTTP 200 with ZERO audio for international accounts. International
+# accounts must use api.minimaxi.chat (note the extra "i"). Override via
+# MINIMAX_BASE_URL if your account lives on a different host.
+DEFAULT_MINIMAX_BASE_URL = "https://api.minimaxi.chat/v1/t2a_v2"
+
+
 class PatchedMinimaxTTS(minimax.TTS):
-    """MiniMax TTS that emits one audio segment per turn (multi-sentence safe)."""
+    """MiniMax TTS that targets the international endpoint and emits one audio
+    segment per turn (multi-sentence safe)."""
+
+    def __init__(self, *args, base_url: str | None = None, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self._opts.base_url = (
+            base_url or os.environ.get("MINIMAX_BASE_URL") or DEFAULT_MINIMAX_BASE_URL
+        )
 
     def stream(
         self, *, conn_options=DEFAULT_API_CONNECT_OPTIONS
