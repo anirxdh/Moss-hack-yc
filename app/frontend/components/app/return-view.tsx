@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTheme } from 'next-themes';
 import { useRouter } from 'next/navigation';
 import { useSessionContext } from '@livekit/components-react';
@@ -8,6 +8,7 @@ import type { AppConfig } from '@/app-config';
 import type { Form1040Summary } from '@/app/api/generate-1040/_lib/schema';
 import { AgentSessionView_01 } from '@/components/agents-ui/blocks/agent-session-view-01';
 import { Button } from '@/components/ui/button';
+import { useMossContextEvents } from '@/hooks/useMossContextEvents';
 
 interface ReturnViewProps {
   appConfig: AppConfig;
@@ -29,6 +30,9 @@ export function ReturnView({ appConfig }: ReturnViewProps) {
   const router = useRouter();
   const { isConnected, start } = useSessionContext();
   const { resolvedTheme } = useTheme();
+
+  // Generated 1040 from the upload -> /api/generate-1040 flow, surfaced in the
+  // /return preview below.
   const [generated, setGenerated] = useState<GeneratedReturn | null>(null);
 
   useEffect(() => {
@@ -48,16 +52,37 @@ export function ReturnView({ appConfig }: ReturnViewProps) {
     };
   }, []);
 
-  const pdfSrc = generated?.pdfUrl ?? '/tax-return.pdf';
+  // Preview document: the generated 1040 if present, else the placeholder.
+  const previewSrc = generated?.pdfUrl ?? '/tax-return.pdf';
+
+  // Follow the agent: when it cites a chunk from the tax doc, jump the PDF to
+  // that chunk's page. Moss stores the page per chunk and the agent publishes it
+  // in the moss_context event, so the on-screen doc tracks what the CPA says.
+  const mossEvents = useMossContextEvents();
+  const citedPage = useMemo(() => {
+    for (let i = mossEvents.length - 1; i >= 0; i--) {
+      const md = mossEvents[i].matches?.[0]?.metadata as { page?: string | number } | undefined;
+      const page = md?.page;
+      if (page != null && /^\d+$/.test(String(page))) return String(page);
+    }
+    return null;
+  }, [mossEvents]);
+  const pdfSrc = citedPage ? `/tax-return.pdf#page=${citedPage}` : '/tax-return.pdf';
 
   // Once the call is live, keep the tax document beside the live AI CPA
   // (voice + Olivia avatar) instead of taking over the full screen.
   if (isConnected) {
     return (
-      <main className="grid h-svh grid-cols-1 lg:grid-cols-2">
-        {/* Your tax document — stays visible next to the CPA while you talk */}
-        <section className="bg-muted relative hidden overflow-hidden border-r lg:block">
+      <main className="grid h-svh grid-cols-2">
+        {/* Your tax document — beside the CPA, auto-scrolls to the cited page */}
+        <section className="bg-muted relative overflow-hidden border-r">
+          {citedPage && (
+            <div className="absolute top-3 left-3 z-10 rounded-full bg-black/75 px-3 py-1 text-xs font-medium text-white shadow">
+              📄 Source · page {citedPage}
+            </div>
+          )}
           <iframe
+            key={pdfSrc}
             src={pdfSrc}
             title="Your tax return"
             className="absolute inset-0 h-full w-full bg-white"
@@ -115,10 +140,10 @@ export function ReturnView({ appConfig }: ReturnViewProps) {
           </p>
         )}
 
-        {/* Generated 1040 (or, before generation, the locally-served uploaded PDF). */}
+        {/* Generated 1040 (or, before generation, the locally-served placeholder). */}
         <div className="bg-muted mt-4 overflow-hidden rounded-xl border p-2">
           <iframe
-            src={pdfSrc}
+            src={previewSrc}
             title="Your tax return"
             className="h-[80vh] w-full rounded-md bg-white"
           />

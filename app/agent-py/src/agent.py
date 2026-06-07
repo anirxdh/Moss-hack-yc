@@ -32,6 +32,44 @@ load_dotenv(".env.local")
 # memory store. See agent-py/src/create_index.py.
 KNOWLEDGE_INDEX = os.getenv("MOSS_INDEX_NAME", "knowledge")
 MEMORY_INDEX = os.getenv("MOSS_MEMORY_INDEX_NAME", "memory")
+# `taxcode` is the cited US tax-law corpus (see create_index.py / taxcode.json).
+TAXCODE_INDEX = os.getenv("MOSS_TAXCODE_INDEX_NAME", "taxcode")
+
+# Minimum Moss similarity score for a taxcode match to count as a real citation.
+# Below this, search_taxcode refuses instead of letting the LLM answer from its
+# own memory. Calibrated with src/measure_taxcode_scores.py against the 60-chunk
+# corpus: in-corpus queries score >=0.975, genuinely-absent topics ~0.8, so 0.90
+# is the clean cut. NOTE: moss-minilm scores are compressed (anything tax-adjacent
+# scores high), so this is a COARSE pre-filter; the real backstop is the
+# instruction telling the agent to answer ONLY from retrieved text. Override via
+# TAXCODE_MIN_SCORE in .env.local (raise toward 0.95 if it under-refuses).
+TAXCODE_MIN_SCORE = float(os.getenv("TAXCODE_MIN_SCORE", "0.90"))
+
+# Returned by search_taxcode when no match clears the citation threshold. The
+# instructions make the agent refuse + offer a CPA hand-off on seeing this, so a
+# tax-law answer can never be sourced from the model's own training knowledge.
+NO_CITATION_FOUND = (
+    "NO_CITATION_FOUND. You do not have a cited source for this. Tell the user you "
+    "cannot cite it from the tax code, do NOT answer from your own knowledge, and "
+    "offer to flag it for their CPA. Then call record_concern with the question."
+)
+
+
+def _disallow_interruptions(context: RunContext | None) -> None:
+    """Best-effort: shield a state-mutating tool from a mid-call barge-in.
+
+    RunContext.disallow_interruptions() raises RuntimeError if the turn was
+    already interrupted, and `context` is None in unit tests — both are handled
+    so the caller (sign_off) never crashes on the most important interaction.
+    """
+    fn = getattr(context, "disallow_interruptions", None)
+    if fn is None:
+        return
+    try:
+        fn()
+    except RuntimeError:
+        logger.warning("Could not disallow interruptions; turn already interrupted")
+
 
 # Fallback identity used only when ctx.job.metadata is absent (e.g. when
 # running `uv run src/agent.py console`). The frontend provides a real
@@ -244,23 +282,58 @@ class Assistant(Agent):
             llm=build_llm(),
             instructions=textwrap.dedent(
                 """\
-                You are a warm, sharp AI CPA. You help the user understand their
-                own financial and tax documents, and you remember details they
-                share so future answers feel personal.
+                You are Tax It Easy, a warm, sharp AI CPA leading a final review
+                call. The user's tax return for the year is already prepared. Your
+                job is to
+                walk them through it in plain language, answer their questions with
+                cited sources, address every concern, and guide them to approve the
+                filing. You are not a substitute for a licensed CPA on the final
+                decision — you explain, they approve, the CPA files.
 
-                # Grounding (very important)
+                # The numbers (read them from their return, never compute them)
 
-                - For ANY question about the user's taxes, income, withholding,
-                  deductions, forms, or specific numbers, ALWAYS call
-                  `search_knowledge` BEFORE you answer, and ground your reply ONLY
-                  in the returned snippets from their documents.
-                - Say where it came from in plain language (for example, "on your
-                  W-2" or "your return shows"). Never invent a figure, form, or
-                  rule.
-                - If the snippets do not contain the answer, say so honestly: tell
-                  them you don't see that in their documents rather than guessing.
-                - You explain what their documents say. You are not a substitute
-                  for a licensed CPA on final filing decisions.
+                - For ANY figure — refund or amount owed, income, withholding,
+                  deductions, per-state results, forms — ALWAYS call
+                  `search_knowledge` FIRST and read the numbers EXACTLY from the
+                  snippets of their actual tax return. Say where it came from in
+                  plain language ("your return shows", "on your W-2").
+                - Never calculate, estimate, round, or invent a number, form, or
+                  figure. If the snippets don't contain the answer, say you don't
+                  see it in their documents rather than guessing.
+
+                # Tax-law questions (cite them, never guess)
+
+                - For ANY "why / how / what does this mean" question about tax
+                  rules, deductions, credits, brackets, or state rules, ALWAYS call
+                  `search_taxcode` FIRST and answer ONLY from the returned text,
+                  naming the source (for example, "per I-R-S Publication 17").
+                - If `search_taxcode` returns NO_CITATION_FOUND, do NOT answer from
+                  your own knowledge. Tell them you can't cite that one, offer to
+                  flag it for their CPA, and call `record_concern`.
+                - Even when it returns text, only answer if that text actually
+                  addresses their question. If the snippets are about a different
+                  topic, treat it like NO_CITATION_FOUND: say you can't cite it,
+                  offer the CPA hand-off, and call `record_concern`. Never fill the
+                  gap with your own tax knowledge.
+
+                # The walkthrough (lead it, but follow the user)
+
+                - Open by greeting them warmly and stating the headline: their
+                  refund or the amount they owe. Then walk through, pausing for
+                  questions, in this order: income, withholding, each state, then
+                  invite any remaining questions.
+                - If they jump ahead or interrupt with a question, follow them,
+                  answer it, then return to where you were.
+
+                # Concerns and approval
+
+                - When the user voices a worry or a question you couldn't fully
+                  answer, call `record_concern`. When it's addressed, call
+                  `resolve_concern`.
+                - Do NOT wrap up while any concern is open. Before approval, ask if
+                  there's anything else.
+                - Only when the user clearly says they approve, call `sign_off`. If
+                  it reports open concerns, resolve those first and ask again.
 
                 # Memory
 
@@ -298,6 +371,11 @@ class Assistant(Agent):
             os.getenv("MOSS_PROJECT_ID"), os.getenv("MOSS_PROJECT_KEY")
         )
         self._indexes_loaded = False
+        # Concern tracking for the sign-off gate. In-process (deterministic,
+        # testable); maps concern text -> "open"|"resolved". Mirrored to Moss
+        # memory once at sign_off, not per toggle (keeps the voice path fast).
+        self._concerns: dict[str, str] = {}
+        self._signed_off = False
 
     async def on_enter(self) -> None:
         # Preload both Moss indexes so the first query is fast. Guarded: log and
@@ -312,11 +390,13 @@ class Assistant(Agent):
             try:
                 await self._moss.load_index(KNOWLEDGE_INDEX)
                 await self._moss.load_index(MEMORY_INDEX)
+                await self._moss.load_index(TAXCODE_INDEX)
                 self._indexes_loaded = True
                 logger.info(
-                    "Loaded Moss indexes '%s' and '%s'",
+                    "Loaded Moss indexes '%s', '%s', and '%s'",
                     KNOWLEDGE_INDEX,
                     MEMORY_INDEX,
+                    TAXCODE_INDEX,
                 )
             except Exception:
                 logger.exception("Failed to preload Moss indexes; will retry on use")
@@ -371,7 +451,19 @@ class Assistant(Agent):
         Args:
             query: The user's question or topic to look up.
         """
-        result = await self._moss.query(KNOWLEDGE_INDEX, query, QueryOptions(top_k=3))
+        # SECURITY BOUNDARY: the `knowledge` index is shared across users, so we
+        # scope every document query to THIS caller via a user_id metadata filter
+        # — exactly like recall_facts does for memory. Their return is tagged with
+        # their user_id at ingest (src/ingest_tax.py). Without this filter a user
+        # could retrieve another user's tax document.
+        result = await self._moss.query(
+            KNOWLEDGE_INDEX,
+            query,
+            QueryOptions(
+                top_k=3,
+                filter={"field": "user_id", "condition": {"$eq": self._user_id}},
+            ),
+        )
         await self._publish_moss_context(query, result)
 
         docs = getattr(result, "docs", None) or []
@@ -435,6 +527,148 @@ class Assistant(Agent):
         if not facts:
             return "I don't have anything remembered for you yet."
         return "\n".join(facts)
+
+    @function_tool()
+    async def search_taxcode(self, context: RunContext, query: str) -> str:
+        """Look up a US tax rule to answer a 'why/how/what does this mean' question.
+
+        Call this for ANY question about tax law, deductions, credits, brackets,
+        withholding rules, or state rules. Answer ONLY from the returned text and
+        name the source. If this returns NO_CITATION_FOUND, you must NOT answer
+        from your own knowledge — say you can't cite it and offer to flag it for
+        the CPA.
+
+        Args:
+            query: The tax rule or concept to look up.
+        """
+        result = await self._moss.query(TAXCODE_INDEX, query, QueryOptions(top_k=3))
+        await self._publish_moss_context(query, result)
+
+        docs = getattr(result, "docs", None) or []
+        if not docs:
+            return NO_CITATION_FOUND
+
+        # Gate: the single best match must clear the citation threshold. A score
+        # of None (e.g. a backend that omits scores) can't be judged, so it
+        # passes rather than silently refusing.
+        top_score = getattr(docs[0], "score", None)
+        if top_score is not None and top_score < TAXCODE_MIN_SCORE:
+            return NO_CITATION_FOUND
+
+        snippets = [
+            text
+            for d in docs
+            if (getattr(d, "score", None) is None or d.score >= TAXCODE_MIN_SCORE)
+            and (text := (getattr(d, "text", "") or "").strip())
+        ]
+        if not snippets:
+            return NO_CITATION_FOUND
+        return "\n\n".join(snippets)
+
+    @function_tool()
+    async def record_concern(self, context: RunContext, concern: str) -> str:
+        """Record a worry or unresolved question the user raised.
+
+        Use this whenever the user voices a concern, an objection, or a question
+        you could not answer. Open concerns BLOCK sign-off until resolved.
+
+        Args:
+            concern: A short statement of the user's concern.
+        """
+        key = concern.strip()
+        if not key:
+            return "There was nothing to record."
+        self._concerns[key] = "open"
+        return "Noted — I'll make sure we resolve that before you approve."
+
+    @function_tool()
+    async def resolve_concern(self, context: RunContext, concern: str) -> str:
+        """Mark a previously recorded concern as resolved once it's addressed.
+
+        Args:
+            concern: The concern that has now been addressed (a close match is fine).
+        """
+        needle = concern.strip().lower()
+        match = None
+        if concern.strip() in self._concerns:
+            match = concern.strip()
+        else:
+            for text, status in self._concerns.items():
+                if status == "open" and (
+                    needle in text.lower() or text.lower() in needle
+                ):
+                    match = text
+                    break
+        if match is None:
+            return "I don't have that one on the list, but noted."
+        self._concerns[match] = "resolved"
+        remaining = sum(1 for s in self._concerns.values() if s == "open")
+        if remaining:
+            return f"Got it, that's resolved. You still have {remaining} open to go through."
+        return "That's resolved, and nothing else is open."
+
+    @function_tool()
+    async def sign_off(self, context: RunContext) -> str:
+        """Record the user's final approval to file. Call ONLY after the user
+        has explicitly said they approve. Refuses while any concern is open.
+        """
+        open_concerns = [t for t, s in self._concerns.items() if s == "open"]
+        if open_concerns:
+            joined = "; ".join(open_concerns)
+            return (
+                f"CANNOT_APPROVE_YET: these concerns are still open: {joined}. "
+                "Resolve them with the user, then ask for approval again."
+            )
+        if self._signed_off:
+            return (
+                "ALREADY_APPROVED: the return is already approved; nothing more to do."
+            )
+
+        # The single most important interaction — protect the state mutation,
+        # the artifact write, and the frontend signal from a mid-call barge-in.
+        _disallow_interruptions(context)
+        self._signed_off = True
+
+        resolved = [t for t, s in self._concerns.items() if s == "resolved"]
+        artifact = {
+            "user_id": self._user_id,
+            "approved": True,
+            "resolved_concerns": resolved,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+
+        await self._publish_approval(artifact)
+        # Mirror the approval to Moss memory ONCE (durable record). No index
+        # reload here: the gate uses the in-process dict, so we keep the path fast.
+        with contextlib.suppress(Exception):
+            await self._moss.add_docs(
+                MEMORY_INDEX,
+                [
+                    DocumentInfo(
+                        id=f"{self._user_id}-approval-{uuid.uuid4()}",
+                        text=f"Approved tax filing: {json.dumps(artifact, default=str)}",
+                        metadata={"user_id": self._user_id, "kind": "approval"},
+                    )
+                ],
+            )
+        return "All set — I've recorded your approval to file. Your CPA will take it from here."
+
+    async def _publish_approval(self, artifact: dict) -> None:
+        """Publish an `approval` data message so the frontend renders the card.
+
+        Mirrors `_publish_moss_context`'s contract; the frontend distinguishes on
+        `type`. Guarded so a publish failure never blocks the recorded approval.
+        """
+        if self._room is None:
+            return
+        try:
+            payload = {"type": "approval", "data": artifact}
+            encoded = json.dumps(payload, default=str).encode("utf-8")
+            await self._room.local_participant.publish_data(
+                payload=encoded, reliable=True
+            )
+        except Exception:
+            logger.exception("Failed to publish approval data")
 
 
 server = AgentServer()
@@ -525,9 +759,15 @@ async def my_agent(
     try:
         await session.generate_reply(
             instructions=(
-                "Greet the user warmly in one sentence, introduce yourself as their "
-                "AI CPA who has read their tax documents, and invite them to ask "
-                "anything about their return."
+                "This is the start of the final review call. FIRST call "
+                "search_knowledge for the bottom line of their return (their refund "
+                "or the amount they owe) and read it EXACTLY from the returned "
+                "snippets. Then open the call proactively: greet them warmly in one "
+                "sentence as Tax It Easy, their AI CPA who has reviewed their "
+                "return, state that "
+                "headline in natural spoken dollars, and invite them to walk through "
+                "it together or ask anything. Keep it warm and brief; ground every "
+                "number in their documents and never invent one."
             )
         )
         logger.info("AI CPA: greeting sent successfully")

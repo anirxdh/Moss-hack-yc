@@ -44,10 +44,13 @@ def test_chunks_to_docs_prefers_embed_and_falls_back() -> None:
         },
         {"chunk_id": "c", "embed": "", "segments": []},  # no text -> skipped
     ]
-    docs = ingest_tax.chunks_to_docs(chunks)
+    docs = ingest_tax.chunks_to_docs(chunks, "u1")
 
-    assert [d.id for d in docs] == ["a", "b"]
+    # Ids are user-namespaced + index-based so re-ingest upserts this user only.
+    assert [d.id for d in docs] == ["u1-chunk-0", "u1-chunk-1"]
     assert "Wages" in docs[0].text
+    assert docs[0].metadata["user_id"] == "u1"
+    assert docs[0].metadata["chunk_id"] == "a"
     assert docs[0].metadata["page"] == "2"
     assert docs[0].metadata["types"] == "Text"
     assert docs[0].metadata["source"] == "2025_tax_return"
@@ -55,10 +58,12 @@ def test_chunks_to_docs_prefers_embed_and_falls_back() -> None:
     assert docs[1].metadata["page"] == "3"
 
 
-def test_chunks_to_docs_uses_index_when_no_chunk_id() -> None:
-    docs = ingest_tax.chunks_to_docs([{"embed": "hi", "segments": []}])
-    assert docs[0].id == "chunk-0"
+def test_chunks_to_docs_namespaces_id_by_user() -> None:
+    docs = ingest_tax.chunks_to_docs([{"embed": "hi", "segments": []}], "u9")
+    assert docs[0].id == "u9-chunk-0"
+    assert docs[0].metadata["user_id"] == "u9"
     assert "page" not in docs[0].metadata  # no segment page_number
+    assert "chunk_id" not in docs[0].metadata  # none provided
 
 
 # --------------------------------------------------------------------------- #
@@ -135,17 +140,13 @@ def test_poll_job_failed_raises(monkeypatch) -> None:
 # --------------------------------------------------------------------------- #
 class _FakeMoss:
     def __init__(self, *a, **k) -> None:
-        self.created: list = []
-
-    async def delete_index(self, name):
-        pass
-
-    async def create_index(self, name, docs, model):
-        self.created.append((name, len(docs)))
-        return types.SimpleNamespace(job_id="J", index_name=name, doc_count=len(docs))
+        self.added: list = []
 
     async def load_index(self, name):
         pass
+
+    async def add_docs(self, name, docs):
+        self.added.append((name, len(docs)))
 
     async def query(self, name, q, opts):
         doc = types.SimpleNamespace(text="t", score=1.0, metadata={"page": "2"})
@@ -174,7 +175,8 @@ def test_main_happy_path(monkeypatch, tmp_path, capsys) -> None:
     asyncio.run(ingest_tax.main())
 
     out = capsys.readouterr().out
-    assert "Building Moss index" in out
+    assert "into shared index" in out
+    assert "upserted" in out
     assert "retrieval OK" in out
 
 
@@ -228,27 +230,25 @@ def test_main_no_usable_text_exits(monkeypatch, tmp_path) -> None:
         asyncio.run(ingest_tax.main())
 
 
-def test_main_delete_index_exception_is_tolerated(
-    monkeypatch, tmp_path, capsys
-) -> None:
-    """If the index doesn't exist yet, the best-effort delete is swallowed."""
+def test_main_index_missing_exits(monkeypatch, tmp_path) -> None:
+    """If the shared index doesn't exist yet, exit with a clear create instruction."""
     pdf = tmp_path / "tax.pdf"
     pdf.write_bytes(b"%PDF")
     _set_env(monkeypatch)
 
-    class _DelFails(_FakeMoss):
-        async def delete_index(self, name):
-            raise RuntimeError("does not exist")
+    class _NoIndex(_FakeMoss):
+        async def load_index(self, name):
+            raise RuntimeError("index not found")
 
-    monkeypatch.setattr(ingest_tax, "MossClient", _DelFails)
+    monkeypatch.setattr(ingest_tax, "MossClient", _NoIndex)
     monkeypatch.setattr(ingest_tax, "submit_parse", lambda p, k: "J")
     monkeypatch.setattr(
         ingest_tax, "poll_job", lambda j, k: [{"chunk_id": "a", "embed": "hi"}]
     )
     monkeypatch.setattr(ingest_tax.sys, "argv", ["ingest_tax.py", str(pdf)])
 
-    asyncio.run(ingest_tax.main())
-    assert "no existing" in capsys.readouterr().out
+    with pytest.raises(SystemExit):
+        asyncio.run(ingest_tax.main())
 
 
 def test_main_smoke_query_no_hits(monkeypatch, tmp_path, capsys) -> None:

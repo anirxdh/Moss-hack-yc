@@ -33,10 +33,10 @@ export interface AppConfig {
 }
 
 export const APP_CONFIG_DEFAULTS: AppConfig = {
-  companyName: 'Moss',
-  pageTitle: 'Moss AI CPA',
+  companyName: 'Tax It Easy',
+  pageTitle: 'Tax It Easy',
   pageDescription:
-    'A voice CPA that answers questions about your own tax documents, grounded in your real numbers and retrieved in milliseconds by Moss.',
+    'Tax It Easy — a voice CPA that answers questions about your own tax documents, grounded in your real numbers and retrieved in milliseconds by Moss.',
 
   supportsChatInput: true,
   supportsVideoInput: true,

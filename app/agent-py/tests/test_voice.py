@@ -152,6 +152,19 @@ def test_patched_minimax_base_url_env_override(monkeypatch) -> None:
     assert tts._opts.base_url == "https://custom.example/v1/t2a_v2"
 
 
+def test_patched_minimax_allows_voice_outside_plugin_literal(monkeypatch) -> None:
+    """Newer MiniMax voices (e.g. Calm_Woman) aren't in the stock plugin's voice
+    Literal; the patch must accept them by bypassing that validation."""
+    _clear(monkeypatch)
+    _minimax_creds(monkeypatch)
+
+    tts = minimax_patch.PatchedMinimaxTTS(
+        model="speech-02-turbo", voice_id="Calm_Woman"
+    )
+
+    assert tts._opts.voice_id == "Calm_Woman"
+
+
 def test_patched_stream_is_single_segment_subclass() -> None:
     assert issubclass(
         minimax_patch._SingleSegmentStream, minimax_patch.minimax.tts.SynthesizeStream
