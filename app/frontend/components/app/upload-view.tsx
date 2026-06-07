@@ -95,7 +95,6 @@ export function UploadView() {
         </span>
         <Button
           size="lg"
-          disabled={files.length === 0}
           onClick={() => router.push('/return')}
           className="rounded-full font-mono text-xs font-bold tracking-wider uppercase"
         >
