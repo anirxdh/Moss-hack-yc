@@ -16,29 +16,41 @@ export function ReturnView({ appConfig }: ReturnViewProps) {
   const { isConnected, start } = useSessionContext();
   const { resolvedTheme } = useTheme();
 
-  // Once the call is live, hand over to the existing full-screen agent session UI.
+  // Once the call is live, keep the tax document beside the live AI CPA
+  // (voice + Olivia avatar) instead of taking over the full screen.
   if (isConnected) {
     return (
-      <AgentSessionView_01
-        supportsChatInput={appConfig.supportsChatInput}
-        supportsVideoInput={appConfig.supportsVideoInput}
-        supportsScreenShare={appConfig.supportsScreenShare}
-        isPreConnectBufferEnabled={appConfig.isPreConnectBufferEnabled}
-        audioVisualizerType={appConfig.audioVisualizerType}
-        audioVisualizerColor={
-          resolvedTheme === 'dark'
-            ? appConfig.audioVisualizerColorDark
-            : appConfig.audioVisualizerColor
-        }
-        audioVisualizerColorShift={appConfig.audioVisualizerColorShift}
-        audioVisualizerBarCount={appConfig.audioVisualizerBarCount}
-        audioVisualizerGridRowCount={appConfig.audioVisualizerGridRowCount}
-        audioVisualizerGridColumnCount={appConfig.audioVisualizerGridColumnCount}
-        audioVisualizerRadialBarCount={appConfig.audioVisualizerRadialBarCount}
-        audioVisualizerRadialRadius={appConfig.audioVisualizerRadialRadius}
-        audioVisualizerWaveLineWidth={appConfig.audioVisualizerWaveLineWidth}
-        className="fixed inset-0"
-      />
+      <main className="grid h-svh grid-cols-1 lg:grid-cols-2">
+        {/* Your tax document — stays visible next to the CPA while you talk */}
+        <section className="bg-muted relative hidden overflow-hidden border-r lg:block">
+          <iframe
+            src="/tax-return.pdf"
+            title="Your tax return"
+            className="absolute inset-0 h-full w-full bg-white"
+          />
+        </section>
+        {/* Live AI CPA: voice + Olivia avatar */}
+        <AgentSessionView_01
+          supportsChatInput={appConfig.supportsChatInput}
+          supportsVideoInput={appConfig.supportsVideoInput}
+          supportsScreenShare={appConfig.supportsScreenShare}
+          isPreConnectBufferEnabled={appConfig.isPreConnectBufferEnabled}
+          audioVisualizerType={appConfig.audioVisualizerType}
+          audioVisualizerColor={
+            resolvedTheme === 'dark'
+              ? appConfig.audioVisualizerColorDark
+              : appConfig.audioVisualizerColor
+          }
+          audioVisualizerColorShift={appConfig.audioVisualizerColorShift}
+          audioVisualizerBarCount={appConfig.audioVisualizerBarCount}
+          audioVisualizerGridRowCount={appConfig.audioVisualizerGridRowCount}
+          audioVisualizerGridColumnCount={appConfig.audioVisualizerGridColumnCount}
+          audioVisualizerRadialBarCount={appConfig.audioVisualizerRadialBarCount}
+          audioVisualizerRadialRadius={appConfig.audioVisualizerRadialRadius}
+          audioVisualizerWaveLineWidth={appConfig.audioVisualizerWaveLineWidth}
+          className="relative h-full w-full"
+        />
+      </main>
     );
   }
 
