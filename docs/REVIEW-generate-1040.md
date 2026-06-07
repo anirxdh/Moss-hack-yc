@@ -26,6 +26,18 @@ all tax arithmetic is deterministic code; the output is the genuine IRS form.**
 
 Full design: [`docs/superpowers/specs/2026-06-07-generate-1040-endpoint-design.md`](superpowers/specs/2026-06-07-generate-1040-endpoint-design.md).
 
+> **Merged with current `main`.** `main` advanced while this was in flight (incl. a
+> Moss "citation page jump" feature on `/return`). This branch merges `main` and resolves
+> the one overlap in `return-view.tsx` by keeping **both** behaviors:
+> - **Live CPA call pane** → main's citation-grounded *uploaded* doc (its page anchors map
+>   to the Moss-indexed upload), untouched.
+> - **`/return` preview pane** → the **generated 1040** from this PR.
+>
+> ⚠️ **Product decision to confirm:** during a *live* call the side pane shows the uploaded
+> source doc (not the generated 1040), because Moss page anchors point at the uploaded doc.
+> If you'd rather show the generated 1040 in the live pane too, that's a follow-up (it would
+> need Moss to index the generated doc).
+
 ---
 
 ## 2. Test it locally in ~5 minutes
