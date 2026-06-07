@@ -7,15 +7,6 @@ import type { AppConfig } from '@/app-config';
 import { AgentSessionView_01 } from '@/components/agents-ui/blocks/agent-session-view-01';
 import { Button } from '@/components/ui/button';
 
-const FORM_1040_ROWS = [
-  'Total income',
-  'Adjusted gross income',
-  'Taxable income',
-  'Total tax',
-  'Federal tax withheld',
-  'Refund',
-];
-
 interface ReturnViewProps {
   appConfig: AppConfig;
 }
@@ -55,34 +46,19 @@ export function ReturnView({ appConfig }: ReturnViewProps) {
     <main className="mx-auto grid min-h-svh w-full max-w-5xl gap-6 px-6 py-12 lg:grid-cols-[1fr_280px]">
       {/* 1040 preview */}
       <section className="order-2 lg:order-1">
-        <h1 className="text-2xl font-bold tracking-tight">Your 2025 Form 1040</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Your 2025 tax return</h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Generated from your uploaded documents.
+          Showing the document you uploaded. Your generated 1040 will replace this soon.
         </p>
 
-        {/* Placeholder document — the real parsed 1040 PDF will render here */}
-        <div className="bg-muted mt-4 rounded-xl border p-4">
-          <div className="mx-auto aspect-[8.5/11] w-full max-w-xl rounded-md bg-white p-8 text-black shadow-sm">
-            <div className="border-b border-black/20 pb-2 text-center">
-              <p className="text-xs tracking-widest uppercase">Form</p>
-              <p className="text-3xl font-bold">1040</p>
-              <p className="text-xs">U.S. Individual Income Tax Return — 2025</p>
-            </div>
-            <dl className="mt-6 space-y-3 text-sm">
-              {FORM_1040_ROWS.map((label) => (
-                <div
-                  key={label}
-                  className="flex justify-between border-b border-dashed border-black/20 pb-1"
-                >
-                  <dt>{label}</dt>
-                  <dd className="text-gray-400">— pending —</dd>
-                </div>
-              ))}
-            </dl>
-            <p className="mt-8 text-center text-[10px] text-gray-400">
-              Placeholder preview. The parsed 1040 from your uploaded documents will render here.
-            </p>
-          </div>
+        {/* The uploaded tax document, served locally. NOTE: /tax-return.pdf is
+            gitignored (contains PII) — each environment must place its own copy. */}
+        <div className="bg-muted mt-4 overflow-hidden rounded-xl border p-2">
+          <iframe
+            src="/tax-return.pdf"
+            title="Your uploaded tax return"
+            className="h-[80vh] w-full rounded-md bg-white"
+          />
         </div>
 
         <button
