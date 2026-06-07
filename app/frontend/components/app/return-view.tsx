@@ -1,11 +1,13 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useTheme } from 'next-themes';
 import { useRouter } from 'next/navigation';
 import { useSessionContext } from '@livekit/components-react';
 import type { AppConfig } from '@/app-config';
 import { AgentSessionView_01 } from '@/components/agents-ui/blocks/agent-session-view-01';
 import { Button } from '@/components/ui/button';
+import { useMossContextEvents } from '@/hooks/useMossContextEvents';
 
 interface ReturnViewProps {
   appConfig: AppConfig;
@@ -16,15 +18,35 @@ export function ReturnView({ appConfig }: ReturnViewProps) {
   const { isConnected, start } = useSessionContext();
   const { resolvedTheme } = useTheme();
 
+  // Follow the agent: when it cites a chunk from the tax doc, jump the PDF to
+  // that chunk's page. Moss stores the page per chunk and the agent publishes it
+  // in the moss_context event, so the on-screen doc tracks what the CPA says.
+  const mossEvents = useMossContextEvents();
+  const citedPage = useMemo(() => {
+    for (let i = mossEvents.length - 1; i >= 0; i--) {
+      const md = mossEvents[i].matches?.[0]?.metadata as { page?: string | number } | undefined;
+      const page = md?.page;
+      if (page != null && /^\d+$/.test(String(page))) return String(page);
+    }
+    return null;
+  }, [mossEvents]);
+  const pdfSrc = citedPage ? `/tax-return.pdf#page=${citedPage}` : '/tax-return.pdf';
+
   // Once the call is live, keep the tax document beside the live AI CPA
   // (voice + Olivia avatar) instead of taking over the full screen.
   if (isConnected) {
     return (
       <main className="grid h-svh grid-cols-2">
-        {/* Your tax document — always beside the CPA while you talk */}
+        {/* Your tax document — beside the CPA, auto-scrolls to the cited page */}
         <section className="bg-muted relative overflow-hidden border-r">
+          {citedPage && (
+            <div className="absolute top-3 left-3 z-10 rounded-full bg-black/75 px-3 py-1 text-xs font-medium text-white shadow">
+              📄 Source · page {citedPage}
+            </div>
+          )}
           <iframe
-            src="/tax-return.pdf"
+            key={pdfSrc}
+            src={pdfSrc}
             title="Your tax return"
             className="absolute inset-0 h-full w-full bg-white"
           />
