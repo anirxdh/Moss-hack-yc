@@ -1,0 +1,25 @@
+{
+  "as_of": "2026-06-06",
+  "account": {
+    "type": "individual brokerage",
+    "cash": 2150.50,
+    "total_value": 49951.90,
+    "buying_power": 2150.50
+  },
+  "positions": [
+    {"symbol": "AAPL", "name": "Apple", "shares": 40, "avg_cost": 150.25, "current_price": 228.50, "market_value": 9140.00, "unrealized_gain": 3130.00, "unrealized_gain_pct": 52.1},
+    {"symbol": "NVDA", "name": "NVIDIA", "shares": 60, "avg_cost": 95.40, "current_price": 172.30, "market_value": 10338.00, "unrealized_gain": 4614.00, "unrealized_gain_pct": 80.6},
+    {"symbol": "MSFT", "name": "Microsoft", "shares": 15, "avg_cost": 310.00, "current_price": 478.20, "market_value": 7173.00, "unrealized_gain": 2523.00, "unrealized_gain_pct": 54.3},
+    {"symbol": "VOO", "name": "Vanguard S&P 500 ETF", "shares": 18, "avg_cost": 410.50, "current_price": 545.80, "market_value": 9824.40, "unrealized_gain": 2435.40, "unrealized_gain_pct": 33.0},
+    {"symbol": "TSLA", "name": "Tesla", "shares": 25, "avg_cost": 245.00, "current_price": 198.60, "market_value": 4965.00, "unrealized_gain": -1160.00, "unrealized_gain_pct": -18.9},
+    {"symbol": "AMZN", "name": "Amazon", "shares": 20, "avg_cost": 130.20, "current_price": 205.40, "market_value": 4108.00, "unrealized_gain": 1504.00, "unrealized_gain_pct": 57.8},
+    {"symbol": "KO", "name": "Coca-Cola", "shares": 30, "avg_cost": 58.00, "current_price": 75.10, "market_value": 2253.00, "unrealized_gain": 513.00, "unrealized_gain_pct": 29.5}
+  ],
+  "dividends_ytd": [
+    {"symbol": "AAPL", "name": "Apple", "amount": 38.40},
+    {"symbol": "MSFT", "name": "Microsoft", "amount": 52.00},
+    {"symbol": "VOO", "name": "Vanguard S&P 500 ETF", "amount": 210.15},
+    {"symbol": "KO", "name": "Coca-Cola", "amount": 66.00}
+  ],
+  "realized_gains_ytd": {"short_term": 420.00, "long_term": 1850.00, "total": 2270.00}
+}

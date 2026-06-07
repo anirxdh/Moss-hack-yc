@@ -33,6 +33,16 @@ download/2-All-60-Ideas.html
 
 .gstack/
 
+# --- App build artifacts (app/ source IS tracked; these are not) ---
+.venv/
+.next/
+
+# --- Personal / sensitive PII (NEVER commit) ---
+# Unlocked tax return — contains SSN, income, address. Local-only.
+2025 Tax Return Documents (VASUDEVAN ANIRUDH) - unlocked.pdf
+*Tax Return*.pdf
+* - unlocked.pdf
+
 # --- OS / editor / misc junk ---
 .DS_Store
 *.log
