@@ -26,19 +26,29 @@
 
 ## 🖥️ ACT 2 — LIVE DEMO · real screen recording · ~0:27–1:45 (target ~78s)
 
-| Time (rel) | On screen / action | Spoken (live) | Optional overlay |
-|-----------|--------------------|---------------|------------------|
+| Time (rel) | On screen / action | Spoken (live) | Burn-in caption / overlay |
+|-----------|--------------------|---------------|---------------------------|
 | 0:00–0:05 | Landing page → **Enter** | — | label: *"upload anything"* |
-| 0:05–0:16 | drag **W-2 + 1099** into dropzone → **Generate 1040** | — | — |
-| 0:16–0:23 | **/return** — the 1040 preview renders | — | — |
-| 0:23–0:31 | click **Talk to your CPA** → split-screen (PDF left, avatar right), "● live" | — | — |
-| 0:31–0:44 | **the wow** — instant answer, no pause | **"What's my total income on my W-2?"** | ⚡ badge **`6 ms · Moss`** |
-| 0:44–0:56 | grounded answer cites the doc | **"Can I deduct my home office?"** | — |
-| 0:56–1:03 | memory setup | **"I'm married filing jointly."** | — |
-| 1:03–1:15 | it remembers — no re-asking | **"So what's my standard deduction?"** | tag **`cross-session memory`** |
-| 1:15–1:18 | hold on split-screen, stop | — | — |
+| 0:05–0:16 | drag **W-2 + 1099** into dropzone → **Generate 1040** | — | caption: *"Upload your real docs"* |
+| 0:16–0:23 | **/return** — the 1040 preview renders | — | caption: *"Your 1040, auto-filled"* |
+| 0:23–0:31 | click **Talk to your CPA** → split-screen (PDF left, avatar right), "● live" | — | caption: *"Now ask it anything"* |
+| 0:31–0:44 | **the wow** — instant answer, no pause | **"What's my total income on my W-2?"** | **REQUIRED:** lower-third caption of the question + ⚡ badge **`6 ms · Moss`** (hero-sized, animates in on the answer) |
+| 0:44–0:54 | grounded answer cites the doc | **"Can I deduct my home office?"** | caption: question text + tag **`cited from your W-2`** |
+| 0:54–1:08 | memory + recall in one beat | **"I'm married filing jointly — so what's my standard deduction?"** | caption: question text + tag **`cross-session memory`** |
+| 1:08–1:12 | hold on split-screen, stop | — | — |
 
-*The single most important beat is **Q1 → instant answer with zero lag** — that's the whole pitch on camera.*
+*The single most important beat is **Q1 → instant answer with zero lag** — that's the whole pitch on camera. The `6 ms · Moss` badge is NOT optional; it is the protagonist of the entire video.*
+
+> **Captions are mandatory, not decorative.** Judges scrub demo videos on mute. Every spoken question gets a burn-in lower-third so the wow lands silently. Style: bottom-third, semi-opaque dark plate, white text, accent underline on the key noun.
+
+### 🎥 Live-demo recording protocol (do NOT skip — the demo is the pitch)
+- **Fixed inputs:** record with the SAME two docs every take — one **W-2** and one **1099-INT** with known-clean numbers you've verified produce a correct 1040. Write the expected total income on a sticky note so you can confirm the on-screen answer is *correct*, not just fast.
+- **Warm the cache first:** run the full flow once before recording so the Moss index is loaded — a cold first query is the one place latency could leak in.
+- **Money-beat insurance:** record Q1 (the instant-answer beat) **at least 5 times** and keep the cleanest. The answer must be visibly correct AND visibly instant.
+- **Safety take:** capture one complete clean run end-to-end as a fallback, so the final cut never depends on a single fragile take.
+- **If lag appears on camera:** stop, re-warm, re-take. Never ship a take where the protagonist beat stutters — a 2s pause on Q1 silently refutes the entire thesis.
+- **Network:** record on a stable connection (or local) — a wifi hiccup reads on camera as "the product is slow."
+- **Capture:** 1080p / 30fps, hide bookmarks bar + notifications, clean browser profile, cursor visible.
 
 ## 🏁 ACT 3 — OUTRO · sponsor flex + tagline + credits · ~1:45–2:03
 
@@ -73,14 +83,34 @@
 
 ## 🧰 Production notes
 - **Intro + outro:** built in **Remotion** (code-driven motion graphics) — already rendering locally, no cloud setup.
-- **Voice:** **ElevenLabs** (voice TBD — default "Adam"; open to a more energetic pick).
-- **Demo:** real screen recording of the app (1080p / 30fps).
-- **Assembly:** ffmpeg concat (intro + demo + outro), optional music bed.
-- **Brand:** dark UI, accent blue `#002cf2` / cyan `#1fd5f9` (matches the app).
+- **Voice:** **ElevenLabs** — use an *energetic/snappy* voice (not the default "Adam"); fireship pacing needs drive. Pick something punchy with clear consonants for the rapid intro.
+- **Demo:** real screen recording of the app (1080p / 30fps). See **Live-demo recording protocol** in Act 2.
+- **Captions:** burn-in lower-thirds on every spoken question + key claim (mandatory — video must read on mute). Style: bottom-third, semi-opaque dark plate, white text, accent underline on the key noun.
+- **Aspect ratio:** **16:9 / 1920×1080** (YouTube/judge-scrub default). If also posting to social, export a 9:16 crop separately — do not record vertical.
+- **Assembly:** ffmpeg concat (intro + demo + outro), optional music bed (duck under VO).
+- **Brand:** dark UI, accent blue `#002cf2` / cyan `#1fd5f9`. ✅ **Now matches the app** — `app/frontend/app-config.ts` accent set to blue/cyan + blue audio visualizer enabled. ⚠️ **Eyeball the running app before recording** — the accent now drives every accented element; if anything reads wrong, `git checkout app/frontend/app-config.ts` reverts.
 
-## ❓ Open questions for the reviewer
-1. Any narration wording to change? (e.g. the `$400` figure, the tagline "The latency is gone.")
-2. Voice: keep "Adam" or go younger/snappier?
-3. Demo overlays (the `6 ms · Moss` badge, `cross-session memory` tag) — burn them onto the recording, or keep the demo clean?
-4. Trim the credits hold to land at exactly **2:00**, or fine at ~2:03?
-5. **Team names** for the credits card + confirm the GitHub repo is the submission link (and public).
+## ✅ Resolved decisions (from design review)
+1. **Wording:** keep `$400 for a CPA` (concrete pain anchor) and the tagline "The latency is gone."
+2. **Voice:** energetic/snappy ElevenLabs voice (not Adam).
+3. **Overlays:** **burn them in** — the `6 ms · Moss` badge is the protagonist, not optional; `cross-session memory` tag stays.
+4. **Pacing:** demo middle tightened from 4 → 3 spoken questions (memory beat merged); net demo ≈ 72s.
+5. **Brand:** app recolored to match the video (blue/cyan).
+
+## ❓ Still open for the team
+1. Trim the credits hold to land at exactly **2:00**, or fine at ~2:03?
+2. **Team names** for the credits card + confirm `github.com/anirxdh/Moss-hack-yc` is the submission link **and public**.
+
+---
+
+## GSTACK REVIEW REPORT
+
+| Review | Trigger | Why | Runs | Status | Findings |
+|--------|---------|-----|------|--------|----------|
+| CEO Review | `/plan-ceo-review` | Scope & strategy | 0 | — | — |
+| Codex Review | `/codex review` | Independent 2nd opinion | 0 | — | — |
+| Eng Review | `/plan-eng-review` | Architecture & tests (required) | 0 | — | — |
+| Design Review | `/plan-design-review` | UI/UX gaps | 1 | CLEAR (FULL) | score: 7/10 → 9/10, 5 decisions |
+
+- **UNRESOLVED:** 2 (credits timing to 2:00; team names + public repo confirm)
+- **VERDICT:** DESIGN REVIEW CLEARED — script is recording-ready once the live app brand is eyeballed. Eng review N/A (no app architecture change beyond the one-line brand config).
