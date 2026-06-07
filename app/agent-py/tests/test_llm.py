@@ -24,6 +24,9 @@ _LLM_ENV = (
     "TRUEFOUNDRY_GUARDRAILS",
     "TRUEFOUNDRY_METADATA",
     "TRUEFOUNDRY_TTFT_TIMEOUT_MS",
+    "QWEN_API_KEY",
+    "QWEN_MODEL",
+    "QWEN_BASE_URL",
 )
 
 
@@ -148,6 +151,61 @@ def test_build_llm_gateway_constructs_real(monkeypatch) -> None:
     monkeypatch.setenv(
         "TRUEFOUNDRY_GUARDRAILS", '{"llm_output_guardrails":["grp/tfy-pii"]}'
     )
+
+    llm = agent_module.build_llm()
+
+    assert isinstance(llm, lk_openai.LLM)
+
+
+# --------------------------------------------------------------------------- #
+# Qwen direct (DashScope) via QWEN_API_KEY
+# --------------------------------------------------------------------------- #
+def test_build_llm_qwen_direct(monkeypatch) -> None:
+    """QWEN_API_KEY -> Qwen via DashScope (openai plugin), no gateway needed."""
+    _clear(monkeypatch)
+    monkeypatch.setenv("QWEN_API_KEY", "qwen-key")
+    monkeypatch.setattr(lk_openai, "LLM", _SpyOpenAILLM)
+
+    llm = agent_module.build_llm()
+
+    assert isinstance(llm, _SpyOpenAILLM)
+    assert llm.kwargs["api_key"] == "qwen-key"
+    assert "dashscope" in llm.kwargs["base_url"]
+    assert llm.kwargs["model"] == agent_module.DEFAULT_QWEN_MODEL
+
+
+def test_build_llm_qwen_model_and_endpoint_override(monkeypatch) -> None:
+    _clear(monkeypatch)
+    monkeypatch.setenv("QWEN_API_KEY", "qwen-key")
+    monkeypatch.setenv("QWEN_MODEL", "qwen-max")
+    monkeypatch.setenv(
+        "QWEN_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    )
+    monkeypatch.setattr(lk_openai, "LLM", _SpyOpenAILLM)
+
+    llm = agent_module.build_llm()
+
+    assert llm.kwargs["model"] == "qwen-max"
+    assert llm.kwargs["base_url"] == "https://dashscope.aliyuncs.com/compatible-mode/v1"
+
+
+def test_build_llm_gateway_takes_precedence_over_qwen(monkeypatch) -> None:
+    """Both LLM_BASE_URL and QWEN_API_KEY set -> the explicit gateway wins."""
+    _clear(monkeypatch)
+    monkeypatch.setenv("LLM_BASE_URL", "https://gateway.truefoundry.ai")
+    monkeypatch.setenv("LLM_API_KEY", "tfy")
+    monkeypatch.setenv("QWEN_API_KEY", "qwen-key")
+    monkeypatch.setattr(lk_openai, "LLM", _SpyOpenAILLM)
+
+    llm = agent_module.build_llm()
+
+    assert llm.kwargs["base_url"] == "https://gateway.truefoundry.ai"
+    assert llm.kwargs["api_key"] == "tfy"
+
+
+def test_build_llm_qwen_constructs_real(monkeypatch) -> None:
+    _clear(monkeypatch)
+    monkeypatch.setenv("QWEN_API_KEY", "qwen-key")
 
     llm = agent_module.build_llm()
 

@@ -87,6 +87,12 @@ def build_tts():
 # gateway such as TrueFoundry governance / Qwen-DashScope) ---
 DEFAULT_LLM_MODEL = "openai/gpt-5.2-chat-latest"
 
+# Qwen via Alibaba DashScope (OpenAI-compatible). Set QWEN_API_KEY to route the
+# LLM straight to Qwen (no gateway): international endpoint + a balanced default
+# model. Override with QWEN_BASE_URL / QWEN_MODEL.
+DEFAULT_QWEN_BASE_URL = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+DEFAULT_QWEN_MODEL = "qwen-plus"
+
 
 def _gateway_headers() -> dict[str, str]:
     """Optional TrueFoundry governance headers for the gateway LLM path.
@@ -139,6 +145,18 @@ def build_llm():
         if headers:
             kwargs["extra_headers"] = headers
         return openai.LLM(**kwargs)
+
+    if os.getenv("QWEN_API_KEY"):
+        # Qwen direct via DashScope (no gateway). Convenience path: just set
+        # QWEN_API_KEY (+ optional QWEN_MODEL / QWEN_BASE_URL). To also get PII
+        # redaction + the TrueFoundry sponsor, route Qwen through the gateway.
+        from livekit.plugins import openai
+
+        return openai.LLM(
+            model=os.getenv("QWEN_MODEL", DEFAULT_QWEN_MODEL),
+            base_url=os.getenv("QWEN_BASE_URL", DEFAULT_QWEN_BASE_URL),
+            api_key=os.environ["QWEN_API_KEY"],
+        )
 
     # Default: LiveKit Inference.
     kwargs = {}
