@@ -31,5 +31,7 @@ See: .planning/PROJECT.md (updated 2026-06-06)
 - 2026-06-06: Phase 5 (avatar) BUILT — build_avatar() via livekit-plugins-tavus; avatar.start before session.start per LiveKit docs; degrades to voice-only if creds missing/unknown provider.
 - 2026-06-06: Avatar — added Simli backend (recommended; generous free tier) alongside Tavus, both via AVATAR_PROVIDER. Frontend welcome-screen toggle sets an lk_avatar cookie -> /api/token stamps it into dispatch metadata -> agent attaches the avatar only when on (saves credits during testing). 65 offline tests, ~97% coverage.
 
+- 2026-06-06: Live wiring — Qwen confirmed working (DashScope international, qwen-plus) and now the active LLM (Qwen-direct; the incomplete TrueFoundry lines in .env.local were commented out — they had no LLM_API_KEY and were crashing build_llm). Tavus key validated (replica "Olivia - Office", ready). Avatar reverted to .env-only control (AVATAR_PROVIDER); UI toggle removed per demo preference. 66 tests, ~97%.
+
 ---
-*Last updated: 2026-06-06 — Phases 4 & 5 built; avatar = Simli/Tavus + frontend toggle*
+*Last updated: 2026-06-06 — Qwen live (direct); avatar = AVATAR_PROVIDER env*
