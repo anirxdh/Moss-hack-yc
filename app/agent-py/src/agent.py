@@ -147,6 +147,48 @@ def build_llm():
     return inference.LLM(model=model, **kwargs)
 
 
+# --- Avatar (optional talking-head video; demo wow factor) ---
+# AVATAR_PROVIDER=tavus enables a Tavus avatar that lip-syncs the agent's voice
+# and publishes synced audio+video to the room. Off by default (voice-only), and
+# it degrades to voice-only if creds are missing, so the demo never hard-fails.
+DEFAULT_AVATAR_PROVIDER = "none"
+
+
+def build_avatar():
+    """Return an avatar session if configured, else None (voice-only).
+
+    AVATAR_PROVIDER selects the backend:
+      - "none" (default): no avatar; the agent is voice-only.
+      - "tavus": a Tavus talking-head. Needs TAVUS_API_KEY (read from env by the
+        plugin) plus TAVUS_REPLICA_ID and TAVUS_PERSONA_ID. If TAVUS_API_KEY is
+        missing, returns None so the demo degrades to voice-only instead of
+        crashing.
+
+    The caller starts the returned session with ``avatar.start(session, room)``
+    before ``session.start(...)``; the avatar then routes the agent's audio and
+    publishes the talking head. Returns None -> the agent stays voice-only.
+    """
+    provider = os.getenv("AVATAR_PROVIDER", DEFAULT_AVATAR_PROVIDER).lower()
+    if provider in ("", "none", "off", "false"):
+        return None
+    if provider == "tavus":
+        if not os.getenv("TAVUS_API_KEY"):
+            logger.warning(
+                "AVATAR_PROVIDER=tavus but TAVUS_API_KEY is unset; running voice-only."
+            )
+            return None
+        from livekit.plugins import tavus
+
+        kwargs: dict = {}
+        if os.getenv("TAVUS_REPLICA_ID"):
+            kwargs["replica_id"] = os.environ["TAVUS_REPLICA_ID"]
+        if os.getenv("TAVUS_PERSONA_ID"):
+            kwargs["persona_id"] = os.environ["TAVUS_PERSONA_ID"]
+        return tavus.AvatarSession(**kwargs)
+    logger.warning("Unknown AVATAR_PROVIDER=%r; running voice-only.", provider)
+    return None
+
+
 class Assistant(Agent):
     """Voice agent that wires Moss retrieval + per-user memory into LiveKit."""
 
@@ -403,6 +445,14 @@ async def my_agent(
         # See more at https://docs.livekit.io/agents/build/audio/#preemptive-generation
         preemptive_generation=True,
     )
+
+    # Optional talking-head avatar (Tavus). Started before the session per the
+    # LiveKit pattern: the avatar worker joins the room and publishes the agent's
+    # voice as synced audio+video. Voice-only if disabled or creds are missing.
+    avatar = build_avatar()
+    if avatar:
+        await avatar.start(session, room=ctx.room)
+        logger.info("AI CPA: avatar started (%s)", os.getenv("AVATAR_PROVIDER"))
 
     # Start the session, which initializes the voice pipeline and warms up the models
     await session.start(

@@ -19,6 +19,7 @@ dependencies = [
     { name = "livekit-plugins-ai-coustics" },
     { name = "livekit-plugins-minimax" },
     { name = "livekit-plugins-openai" },
+    { name = "livekit-plugins-tavus" },
     { name = "moss" },
     { name = "python-dotenv" },
 ]
@@ -37,6 +38,7 @@ requires-dist = [
     { name = "livekit-plugins-ai-coustics", specifier = "~=0.2" },
     { name = "livekit-plugins-minimax", specifier = ">=1.2.9" },
     { name = "livekit-plugins-openai", specifier = ">=1.5.16" },
+    { name = "livekit-plugins-tavus", specifier = ">=1.5.16" },
     { name = "moss", specifier = ">=1.4" },
     { name = "python-dotenv" },
 ]
@@ -1547,6 +1549,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/25/10/773b749002bd42575c98dd17256dbcd88bf6ad6d6e5b6258821543a85098/livekit_plugins_silero-1.5.16.tar.gz", hash = "sha256:c15742e648b6e024c667fd7f96bae3335440d8a57c5ca7cbcbc723d9e8b3fbcd", size = 1955907, upload-time = "2026-06-01T20:54:17.857Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/26/72/91dee745825a66f2c9eba34bff42e8a9cac7d18b2c932cd32c6a5985c888/livekit_plugins_silero-1.5.16-py3-none-any.whl", hash = "sha256:a3e572c47cfb4e21cdce51df54bb63cc7de8948ffed6985ab6b36200b26c1987", size = 3903908, upload-time = "2026-06-01T20:54:16.277Z" },
+]
+
+[[package]]
+name = "livekit-plugins-tavus"
+version = "1.5.16"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "livekit-agents" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d6/e4/34c2face1c0fbe35db7d2c681244f22c9824df8b19096c3b919271b6f136/livekit_plugins_tavus-1.5.16.tar.gz", hash = "sha256:283803ed6cc6dbc8bdde8d4cc4dce9a9dca7a822701b0426b00b87b8c14db4c8", size = 5692, upload-time = "2026-06-01T20:54:36.239Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c6/58/074867224e6850806b8340043e9ab88684f99edfa27f089f06d138c58c58/livekit_plugins_tavus-1.5.16-py3-none-any.whl", hash = "sha256:4893ce70689fa9db262ee85d6dcb8d90c611ac619365fabbfc100ee2b7cea4c2", size = 6234, upload-time = "2026-06-01T20:54:35.012Z" },
 ]
 
 [[package]]
