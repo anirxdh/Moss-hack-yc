@@ -158,7 +158,9 @@ def test_patched_minimax_allows_voice_outside_plugin_literal(monkeypatch) -> Non
     _clear(monkeypatch)
     _minimax_creds(monkeypatch)
 
-    tts = minimax_patch.PatchedMinimaxTTS(model="speech-02-turbo", voice_id="Calm_Woman")
+    tts = minimax_patch.PatchedMinimaxTTS(
+        model="speech-02-turbo", voice_id="Calm_Woman"
+    )
 
     assert tts._opts.voice_id == "Calm_Woman"
 
