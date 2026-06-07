@@ -1,6 +1,7 @@
 """Unit tests for the TTS wiring (`build_tts`), covering both backends."""
 
 import agent as agent_module
+import minimax_patch
 
 _TTS_ENV = (
     "TTS_PROVIDER",
@@ -35,11 +36,11 @@ def test_build_tts_default_is_cartesia(monkeypatch) -> None:
     assert tts.kwargs["voice"] == agent_module.CARTESIA_TTS_VOICE
 
 
-def test_build_tts_minimax_defaults(monkeypatch) -> None:
-    """TTS_PROVIDER=minimax -> MiniMax with the default model/voice_id."""
+def test_build_tts_minimax_uses_patched(monkeypatch) -> None:
+    """TTS_PROVIDER=minimax -> the single-segment PatchedMinimaxTTS, with defaults."""
     _clear(monkeypatch)
     monkeypatch.setenv("TTS_PROVIDER", "minimax")
-    monkeypatch.setattr(agent_module.minimax, "TTS", _SpyTTS)
+    monkeypatch.setattr(minimax_patch, "PatchedMinimaxTTS", _SpyTTS)
 
     tts = agent_module.build_tts()
 
@@ -53,7 +54,7 @@ def test_build_tts_minimax_env_overrides(monkeypatch) -> None:
     monkeypatch.setenv("TTS_PROVIDER", "minimax")
     monkeypatch.setenv("MINIMAX_TTS_MODEL", "speech-02-hd")
     monkeypatch.setenv("MINIMAX_TTS_VOICE", "presenter_male")
-    monkeypatch.setattr(agent_module.minimax, "TTS", _SpyTTS)
+    monkeypatch.setattr(minimax_patch, "PatchedMinimaxTTS", _SpyTTS)
 
     tts = agent_module.build_tts()
 
@@ -71,7 +72,7 @@ def test_build_tts_cartesia_constructs_real(monkeypatch) -> None:
 
 
 def test_build_tts_minimax_constructs_real(monkeypatch) -> None:
-    """MiniMax path constructs a real minimax.TTS with dummy creds."""
+    """MiniMax path constructs a real PatchedMinimaxTTS (a minimax.TTS subclass)."""
     _clear(monkeypatch)
     monkeypatch.setenv("TTS_PROVIDER", "minimax")
     monkeypatch.setenv("MINIMAX_API_KEY", "test-key")
@@ -79,4 +80,12 @@ def test_build_tts_minimax_constructs_real(monkeypatch) -> None:
 
     tts = agent_module.build_tts()
 
-    assert isinstance(tts, agent_module.minimax.TTS)
+    assert isinstance(tts, minimax_patch.PatchedMinimaxTTS)
+    assert isinstance(tts, minimax_patch.minimax.TTS)
+
+
+def test_patched_stream_is_single_segment_subclass() -> None:
+    """The patched TTS hands back our single-segment stream type."""
+    assert issubclass(
+        minimax_patch._SingleSegmentStream, minimax_patch.minimax.tts.SynthesizeStream
+    )

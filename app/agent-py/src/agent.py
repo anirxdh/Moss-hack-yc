@@ -19,7 +19,7 @@ from livekit.agents import (
     inference,
     room_io,
 )
-from livekit.plugins import ai_coustics, minimax, silero
+from livekit.plugins import ai_coustics, silero
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
 from moss import DocumentInfo, MossClient, QueryOptions
 
@@ -61,7 +61,11 @@ def build_tts():
     """
     provider = os.getenv("TTS_PROVIDER", DEFAULT_TTS_PROVIDER).lower()
     if provider == "minimax":
-        return minimax.TTS(
+        # Stock minimax 1.2.9 crashes on multi-sentence replies; use the
+        # single-segment patch (src/minimax_patch.py).
+        from minimax_patch import PatchedMinimaxTTS
+
+        return PatchedMinimaxTTS(
             model=os.getenv("MINIMAX_TTS_MODEL", DEFAULT_TTS_MODEL),
             voice_id=os.getenv("MINIMAX_TTS_VOICE", DEFAULT_TTS_VOICE),
         )
