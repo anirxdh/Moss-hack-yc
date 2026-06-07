@@ -15,7 +15,7 @@ See: .planning/PROJECT.md (updated 2026-06-06)
 | 2 | Test Hardening (~100%) | ✓ Done | 59 offline tests, ~96.9% coverage, gate 95%, TESTING.md; CI on push & PR |
 | 3 | Proactive Tax-Aware V2 | ○ Skipped | deferred per user (the demo "winner"; revisit later) |
 | 4 | TrueFoundry Governance | ◑ Built | gateway + PII guardrail via build_llm (openai plugin); feature-flagged; needs TF key + live test |
-| 5 | Video Avatar (Tavus) | ◑ Built | build_avatar toggle (AVATAR_PROVIDER=tavus); voice-only fallback; needs Tavus creds + live test |
+| 5 | Video Avatar (Simli/Tavus) | ◑ Built | AVATAR_PROVIDER=simli (recommended) or tavus; frontend on/off toggle saves credits; voice-only fallback; needs creds + live test |
 | 6 | Upload Endpoint | ○ Pending | FastAPI + per-user index |
 | 7 | Deploy + Demo | ○ Pending | needs AWS / LiveKit Cloud |
 
@@ -28,7 +28,8 @@ See: .planning/PROJECT.md (updated 2026-06-06)
 - 2026-06-06: MiniMax no-audio FIXED — root cause was the stock plugin's CHINA endpoint (api.minimax.chat returns HTTP 200 + zero audio for international accounts). Patch now targets api.minimaxi.chat (MINIMAX_BASE_URL override). MiniMax is now the DEFAULT voice (Cartesia fallback). Live eval added as a regression guard.
 - 2026-06-06: CI — root-level .github/workflows/ci.yml (ruff + tests + 95% gate) on push to main AND every PR. First run green.
 - 2026-06-06: Phase 4 (TrueFoundry) BUILT — build_llm gains an OpenAI-compatible gateway path (livekit-plugins-openai): LLM_BASE_URL + LLM_API_KEY + LLM_MODEL route every call through the gateway; TRUEFOUNDRY_GUARDRAILS sends X-TFY-GUARDRAILS for PII/PHI redaction (input+output); metadata + ttft headers optional. Same path serves the Qwen swap. Feature-flagged. Tests + skipped live eval. Needs TF creds for live test.
-- 2026-06-06: Phase 5 (Tavus avatar) BUILT — build_avatar() toggle (AVATAR_PROVIDER=tavus) via livekit-plugins-tavus; avatar.start before session.start per LiveKit docs; degrades to voice-only if creds missing/unknown provider. 59 offline tests, 96.9% coverage. Needs TAVUS_API_KEY + replica/persona + live test.
+- 2026-06-06: Phase 5 (avatar) BUILT — build_avatar() via livekit-plugins-tavus; avatar.start before session.start per LiveKit docs; degrades to voice-only if creds missing/unknown provider.
+- 2026-06-06: Avatar — added Simli backend (recommended; generous free tier) alongside Tavus, both via AVATAR_PROVIDER. Frontend welcome-screen toggle sets an lk_avatar cookie -> /api/token stamps it into dispatch metadata -> agent attaches the avatar only when on (saves credits during testing). 65 offline tests, ~97% coverage.
 
 ---
-*Last updated: 2026-06-06 — Phases 4 & 5 built (TrueFoundry + Tavus)*
+*Last updated: 2026-06-06 — Phases 4 & 5 built; avatar = Simli/Tavus + frontend toggle*

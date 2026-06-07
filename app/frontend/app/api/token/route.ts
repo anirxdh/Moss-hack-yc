@@ -64,7 +64,12 @@ export async function POST(req: Request) {
     if (roomConfig.agents.length === 0) {
       roomConfig.agents.push(new RoomAgentDispatch({ agentName: AGENT_NAME ?? '' }));
     }
-    const dispatchMetadata = JSON.stringify({ user_id: userId });
+    // The welcome screen sets an `lk_avatar` cookie (on/off) so the user can
+    // toggle the video avatar to save credits. Stamp the preference into the
+    // dispatch metadata; the agent reads `avatar` and only attaches the
+    // talking-head when it's on (and AVATAR_PROVIDER is configured).
+    const avatarEnabled = cookieStore.get('lk_avatar')?.value === 'on';
+    const dispatchMetadata = JSON.stringify({ user_id: userId, avatar: avatarEnabled });
     for (const agent of roomConfig.agents) {
       if (!agent.agentName && AGENT_NAME) {
         agent.agentName = AGENT_NAME;

@@ -1,4 +1,22 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Toggle } from '@/components/ui/toggle';
+
+// The agent reads this preference from its dispatch metadata (see
+// app/api/token/route.ts) and only attaches the talking-head avatar when it's
+// on — so turning it off here keeps a session voice-only and saves credits.
+const AVATAR_COOKIE = 'lk_avatar';
+
+function readAvatarCookie(): boolean {
+  if (typeof document === 'undefined') return false;
+  return document.cookie.split('; ').includes(`${AVATAR_COOKIE}=on`);
+}
+
+function writeAvatarCookie(on: boolean): void {
+  document.cookie = `${AVATAR_COOKIE}=${on ? 'on' : 'off'}; path=/; max-age=31536000; samesite=lax`;
+}
 
 function WelcomeImage() {
   return (
@@ -28,13 +46,25 @@ export const WelcomeView = ({
   onStartCall,
   ref,
 }: React.ComponentProps<'div'> & WelcomeViewProps) => {
+  const [avatarOn, setAvatarOn] = useState(false);
+
+  // Hydrate the toggle from the persisted cookie on mount.
+  useEffect(() => {
+    setAvatarOn(readAvatarCookie());
+  }, []);
+
+  const handleAvatarChange = (pressed: boolean) => {
+    setAvatarOn(pressed);
+    writeAvatarCookie(pressed);
+  };
+
   return (
     <div ref={ref}>
       <section className="bg-background flex flex-col items-center justify-center text-center">
         <WelcomeImage />
 
         <p className="text-foreground max-w-prose pt-1 leading-6 font-medium">
-          Chat live with your voice AI agent
+          Chat live with your AI CPA
         </p>
 
         <Button
@@ -44,6 +74,22 @@ export const WelcomeView = ({
         >
           {startButtonText}
         </Button>
+
+        <div className="mt-5 flex flex-col items-center gap-1">
+          <Toggle
+            variant="outline"
+            size="sm"
+            pressed={avatarOn}
+            onPressedChange={handleAvatarChange}
+            aria-label="Toggle video avatar"
+            className="rounded-full"
+          >
+            {avatarOn ? 'Video avatar: On' : 'Video avatar: Off'}
+          </Toggle>
+          <p className="text-muted-foreground text-xs">
+            Turn off to save avatar credits during testing
+          </p>
+        </div>
       </section>
 
       <div className="fixed bottom-5 left-0 flex w-full items-center justify-center">
