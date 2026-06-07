@@ -104,6 +104,12 @@ async def test_search_knowledge_returns_joined_text_and_publishes_context(
     assert index == agent_module.KNOWLEDGE_INDEX
     assert query == "how does turn detection work?"
     assert options.top_k == 3
+    # SECURITY: the shared knowledge index MUST be scoped to this user so one
+    # user can never retrieve another user's tax document.
+    assert options.filter == {
+        "field": "user_id",
+        "condition": {"$eq": USER_ID},
+    }
 
     # Published exactly one moss_context message, reliably.
     assert len(room.local_participant.published) == 1
@@ -179,12 +185,13 @@ async def test_recall_facts_filters_by_user_id(stub_moss) -> None:
     assert len(room.local_participant.published) == 1
 
 
-async def test_on_enter_preloads_both_indexes(stub_moss) -> None:
-    """on_enter warms the knowledge and memory indexes."""
+async def test_on_enter_preloads_all_indexes(stub_moss) -> None:
+    """on_enter warms the knowledge, memory, AND taxcode indexes."""
     assistant = Assistant(user_id=USER_ID)
     await assistant.on_enter()
     assert agent_module.KNOWLEDGE_INDEX in assistant._moss.load_index_calls
     assert agent_module.MEMORY_INDEX in assistant._moss.load_index_calls
+    assert agent_module.TAXCODE_INDEX in assistant._moss.load_index_calls
 
 
 async def test_search_knowledge_no_results_refuses(stub_moss) -> None:
@@ -201,6 +208,175 @@ async def test_recall_facts_no_results(stub_moss) -> None:
     assistant._moss.query_result = _FakeSearchResult([])
     result = await assistant.recall_facts(None, "what is my name?")
     assert "don't have anything" in result.lower()
+
+
+# --- search_taxcode: the cited-retrieval gate ---
+
+
+async def test_search_taxcode_returns_cited_text_when_above_threshold(
+    stub_moss,
+) -> None:
+    room = _FakeRoom()
+    assistant = Assistant(room=room, user_id=USER_ID)
+    assistant._moss.query_result = _FakeSearchResult(
+        [
+            _FakeDoc("The 2025 standard deduction is 30000 dollars MFJ.", score=0.91),
+            _FakeDoc("It is set by Rev. Proc. 2024-40.", score=0.80),
+        ]
+    )
+    result = await assistant.search_taxcode(None, "what is the standard deduction")
+    assert "standard deduction is 30000 dollars" in result
+    assert "NO_CITATION_FOUND" not in result
+    # Queried the taxcode index and surfaced the matches to the panel.
+    index, _query, _options = assistant._moss.query_calls[0]
+    assert index == agent_module.TAXCODE_INDEX
+    assert len(room.local_participant.published) == 1
+
+
+async def test_search_taxcode_refuses_when_below_threshold(stub_moss) -> None:
+    """A weak top match must trip the gate, not let the LLM answer from memory."""
+    assistant = Assistant(user_id=USER_ID)
+    assistant._moss.query_result = _FakeSearchResult(
+        [_FakeDoc("loosely related", score=0.05)]
+    )
+    result = await assistant.search_taxcode(None, "can I deduct my dog")
+    assert result == agent_module.NO_CITATION_FOUND
+
+
+async def test_search_taxcode_refuses_when_no_docs(stub_moss) -> None:
+    assistant = Assistant(user_id=USER_ID)
+    assistant._moss.query_result = _FakeSearchResult([])
+    result = await assistant.search_taxcode(None, "anything obscure")
+    assert result == agent_module.NO_CITATION_FOUND
+
+
+async def test_search_taxcode_passes_when_score_unknown(stub_moss) -> None:
+    """If the backend omits scores, the match can't be judged so it passes."""
+    assistant = Assistant(user_id=USER_ID)
+    assistant._moss.query_result = _FakeSearchResult(
+        [_FakeDoc("cited rule text", score=None)]
+    )
+    result = await assistant.search_taxcode(None, "a rule")
+    assert "cited rule text" in result
+
+
+# --- concern tracking + the sign-off gate ---
+
+
+async def test_record_and_resolve_concern(stub_moss) -> None:
+    assistant = Assistant(user_id=USER_ID)
+    await assistant.record_concern(None, "Why is my refund smaller this year?")
+    assert assistant._concerns["Why is my refund smaller this year?"] == "open"
+    # A close (substring) match resolves it.
+    msg = await assistant.resolve_concern(None, "refund smaller")
+    assert assistant._concerns["Why is my refund smaller this year?"] == "resolved"
+    assert "resolved" in msg.lower()
+
+
+async def test_resolve_unknown_concern_is_graceful(stub_moss) -> None:
+    assistant = Assistant(user_id=USER_ID)
+    msg = await assistant.resolve_concern(None, "something never raised")
+    assert "noted" in msg.lower()
+
+
+async def test_sign_off_blocked_while_concern_open(stub_moss) -> None:
+    assistant = Assistant(user_id=USER_ID)
+    await assistant.record_concern(None, "I think my state tax looks wrong")
+    result = await assistant.sign_off(None)
+    assert result.startswith("CANNOT_APPROVE_YET")
+    assert assistant._signed_off is False
+
+
+async def test_sign_off_succeeds_when_clear_and_publishes_and_persists(
+    stub_moss,
+) -> None:
+    room = _FakeRoom()
+    assistant = Assistant(room=room, user_id=USER_ID)
+    await assistant.record_concern(None, "state tax question")
+    await assistant.resolve_concern(None, "state tax question")
+
+    result = await assistant.sign_off(None)
+    assert "recorded your approval" in result
+    assert assistant._signed_off is True
+
+    # Published an approval data message (distinct type for the frontend card).
+    assert len(room.local_participant.published) == 1
+    payload = json.loads(room.local_participant.published[0][0].decode("utf-8"))
+    assert payload["type"] == "approval"
+    assert payload["data"]["approved"] is True
+    assert payload["data"]["user_id"] == USER_ID
+
+    # Mirrored the approval to the memory index exactly once, tagged to the user.
+    assert len(assistant._moss.add_docs_calls) == 1
+    index, docs, _ = assistant._moss.add_docs_calls[0]
+    assert index == agent_module.MEMORY_INDEX
+    assert docs[0].metadata == {"user_id": USER_ID, "kind": "approval"}
+
+
+async def test_sign_off_is_idempotent(stub_moss) -> None:
+    assistant = Assistant(room=_FakeRoom(), user_id=USER_ID)
+    first = await assistant.sign_off(None)
+    assert "recorded your approval" in first
+    second = await assistant.sign_off(None)
+    assert second.startswith("ALREADY_APPROVED")
+    # No duplicate memory write on the second call.
+    assert len(assistant._moss.add_docs_calls) == 1
+
+
+async def test_sign_off_without_room_still_records(stub_moss) -> None:
+    """No room (e.g. console mode) -> approval still recorded, no publish, no crash."""
+    assistant = Assistant(user_id=USER_ID)  # room=None
+    result = await assistant.sign_off(None)
+    assert assistant._signed_off is True
+    assert "recorded your approval" in result
+    assert len(assistant._moss.add_docs_calls) == 1
+
+
+async def test_record_empty_concern_is_noop(stub_moss) -> None:
+    assistant = Assistant(user_id=USER_ID)
+    msg = await assistant.record_concern(None, "   ")
+    assert "nothing to record" in msg.lower()
+    assert assistant._concerns == {}
+
+
+async def test_search_taxcode_refuses_when_matches_are_blank(stub_moss) -> None:
+    """Above-threshold but empty-text docs -> still refuse (no real citation)."""
+    assistant = Assistant(user_id=USER_ID)
+    assistant._moss.query_result = _FakeSearchResult([_FakeDoc("   ", score=0.95)])
+    result = await assistant.search_taxcode(None, "a rule")
+    assert result == agent_module.NO_CITATION_FOUND
+
+
+# --- the sign-off barge-in shield (_disallow_interruptions) ---
+
+
+class _FakeCtxAllows:
+    def __init__(self) -> None:
+        self.called = False
+
+    def disallow_interruptions(self) -> None:
+        self.called = True
+
+
+class _FakeCtxAlreadyInterrupted:
+    def disallow_interruptions(self) -> None:
+        raise RuntimeError("already interrupted")
+
+
+def test_disallow_interruptions_calls_through() -> None:
+    ctx = _FakeCtxAllows()
+    agent_module._disallow_interruptions(ctx)
+    assert ctx.called is True
+
+
+def test_disallow_interruptions_swallows_runtime_error() -> None:
+    # Already-interrupted turn must not crash the sign-off.
+    agent_module._disallow_interruptions(_FakeCtxAlreadyInterrupted())
+
+
+def test_disallow_interruptions_noop_when_absent() -> None:
+    agent_module._disallow_interruptions(None)
+    agent_module._disallow_interruptions(object())
 
 
 async def test_publish_context_omits_missing_score_and_metadata(stub_moss) -> None:

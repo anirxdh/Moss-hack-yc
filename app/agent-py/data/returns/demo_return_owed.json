@@ -1,0 +1,17 @@
+{
+  "tax_year": 2025,
+  "filing_status": "single",
+  "agi": 98000,
+  "total_tax": 16800,
+  "total_withholding": 15100,
+  "refund_or_owed": -1700,
+  "states": [
+    {"state": "California", "refund_or_owed": -400, "note": "resident"}
+  ],
+  "yoy": {
+    "refund_change": -3000,
+    "agi_change": 12000,
+    "summary": "Last year you got a small refund; this year you owe, because your income rose about 12000 dollars and your withholding did not adjust."
+  },
+  "_note": "DEMO FIXTURE (not real PII) — the OWED (negative refund) case. refund_or_owed -1700 = withholding 15100 minus total tax 16800."
+}

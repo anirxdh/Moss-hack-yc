@@ -1,0 +1,19 @@
+{
+  "tax_year": 2025,
+  "filing_status": "mfj",
+  "agi": 142000,
+  "total_tax": 18500,
+  "total_withholding": 22700,
+  "refund_or_owed": 4200,
+  "states": [
+    {"state": "California", "refund_or_owed": 600, "note": "part-year resident"},
+    {"state": "Minnesota", "refund_or_owed": -250, "note": "part-year resident"},
+    {"state": "Utah", "refund_or_owed": 180, "note": "nonresident, Utah source income"}
+  ],
+  "yoy": {
+    "refund_change": -1200,
+    "agi_change": 4000,
+    "summary": "Your refund is about 1200 dollars smaller than last year, mainly because your withholding did not keep up with a 4000 dollar rise in income."
+  },
+  "_note": "DEMO FIXTURE (not real PII). States are placeholders pending the real return's states. refund_or_owed 4200 = withholding 22700 minus total tax 18500."
+}

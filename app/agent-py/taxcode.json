@@ -1,0 +1,302 @@
+[
+  {
+    "id": "fed-filing-status-overview",
+    "text": "Your filing status determines your standard deduction, tax brackets, and eligibility for many credits. The five statuses are Single, Married Filing Jointly, Married Filing Separately, Head of Household, and Qualifying Surviving Spouse. You generally use your status as of the last day of the tax year. Per IRS Publication 17, choosing the correct status is the first step on Form 1040.",
+    "metadata": {"source": "IRS Publication 17", "section": "Filing Status", "topic": "filing_status", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-filing-status-mfj",
+    "text": "Married Filing Jointly combines both spouses' income and deductions on one return, gets the largest standard deduction (thirty thousand dollars for 2025), and unlocks the widest tax brackets and most credits. Both spouses are jointly responsible for the tax owed. Most married couples pay less tax filing jointly than separately. See IRS Publication 17, Filing Status.",
+    "metadata": {"source": "IRS Publication 17", "section": "Married Filing Jointly", "topic": "filing_status", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-filing-status-mfs",
+    "text": "Married Filing Separately means each spouse files their own return. It can help when one spouse has large medical expenses or wants to be separate from the other's tax liability, but it disqualifies you from several credits (such as most education credits and the Earned Income Tax Credit) and halves some limits. Per IRS Publication 17, it usually results in more total tax than filing jointly.",
+    "metadata": {"source": "IRS Publication 17", "section": "Married Filing Separately", "topic": "filing_status", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-filing-status-hoh",
+    "text": "Head of Household is for unmarried taxpayers who pay more than half the cost of keeping up a home for a qualifying person, such as a child or dependent relative. It gives a larger standard deduction (twenty-two thousand five hundred dollars for 2025) and more favorable brackets than Single. See IRS Publication 17, Head of Household.",
+    "metadata": {"source": "IRS Publication 17", "section": "Head of Household", "topic": "filing_status", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-standard-deduction-2025",
+    "text": "For tax year 2025 the federal standard deduction is fifteen thousand dollars for Single and Married Filing Separately, thirty thousand dollars for Married Filing Jointly and Qualifying Surviving Spouse, and twenty-two thousand five hundred dollars for Head of Household. These amounts are set annually by IRS Revenue Procedure 2024-40. You take the standard deduction unless your itemized deductions are larger.",
+    "metadata": {"source": "IRS Rev. Proc. 2024-40", "section": "Standard Deduction", "topic": "standard_deduction", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-additional-standard-deduction",
+    "text": "Taxpayers who are 65 or older or blind get an additional standard deduction on top of the base amount. For 2025 the extra amount is one thousand six hundred dollars per qualifying box if married, and two thousand dollars if Single or Head of Household. You can claim it for both age and blindness. See IRS Rev. Proc. 2024-40.",
+    "metadata": {"source": "IRS Rev. Proc. 2024-40", "section": "Additional Standard Deduction", "topic": "standard_deduction", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-itemized-vs-standard",
+    "text": "You choose the larger of the standard deduction or your total itemized deductions. Itemized deductions (on Schedule A) include state and local taxes (capped), home mortgage interest, charitable gifts, and large medical expenses. Most taxpayers take the standard deduction because it exceeds their itemized total. See IRS Schedule A instructions.",
+    "metadata": {"source": "IRS Schedule A Instructions", "section": "Itemizing", "topic": "deductions", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-salt-cap",
+    "text": "If you itemize, your deduction for state and local taxes (income or sales tax plus property tax) is capped at ten thousand dollars per return, or five thousand dollars if Married Filing Separately. This SALT cap was set by the Tax Cuts and Jobs Act and applies for tax year 2025. See IRS Schedule A instructions, line 5e.",
+    "metadata": {"source": "IRS Schedule A Instructions", "section": "SALT Cap (line 5e)", "topic": "deductions", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-mortgage-interest",
+    "text": "Home mortgage interest is deductible on Schedule A on acquisition debt up to seven hundred fifty thousand dollars (or one million dollars for loans taken before December 16, 2017). The lender reports the interest you paid on Form 1098. See IRS Publication 936.",
+    "metadata": {"source": "IRS Publication 936", "section": "Home Mortgage Interest", "topic": "deductions", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-charitable-deduction",
+    "text": "Charitable contributions to qualified organizations are deductible if you itemize. Cash gifts are generally deductible up to sixty percent of your adjusted gross income, with lower limits for property and certain organizations. Keep receipts; gifts of two hundred fifty dollars or more need written acknowledgment. See IRS Publication 526.",
+    "metadata": {"source": "IRS Publication 526", "section": "Charitable Contributions", "topic": "deductions", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-medical-deduction",
+    "text": "If you itemize, you can deduct unreimbursed medical and dental expenses that exceed seven and a half percent of your adjusted gross income. Only the amount above that threshold counts. See IRS Publication 502.",
+    "metadata": {"source": "IRS Publication 502", "section": "Medical Expenses", "topic": "deductions", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-brackets-single-2025",
+    "text": "For 2025, Single filers pay 10% on taxable income up to $11,925; 12% to $48,475; 22% to $103,350; 24% to $197,300; 32% to $250,525; 35% to $626,350; and 37% above that. These are marginal rates, so each rate applies only to the income within that band. Source: IRS Rev. Proc. 2024-40.",
+    "metadata": {"source": "IRS Rev. Proc. 2024-40", "section": "Tax Rate Schedule - Single", "topic": "tax_brackets", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-brackets-mfj-2025",
+    "text": "For 2025, Married Filing Jointly pay 10% on taxable income up to $23,850; 12% to $96,950; 22% to $206,700; 24% to $394,600; 32% to $501,050; 35% to $751,600; and 37% above that. These are marginal rates. Source: IRS Rev. Proc. 2024-40.",
+    "metadata": {"source": "IRS Rev. Proc. 2024-40", "section": "Tax Rate Schedule - MFJ", "topic": "tax_brackets", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-brackets-hoh-2025",
+    "text": "For 2025, Head of Household filers pay 10% on taxable income up to $17,000; 12% to $64,850; 22% to $103,350; 24% to $197,300; 32% to $250,500; 35% to $626,350; and 37% above that. Source: IRS Rev. Proc. 2024-40.",
+    "metadata": {"source": "IRS Rev. Proc. 2024-40", "section": "Tax Rate Schedule - HOH", "topic": "tax_brackets", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-marginal-vs-effective",
+    "text": "Your marginal tax rate is the rate on your last dollar of income (your top bracket). Your effective tax rate is your total tax divided by your total income, which is always lower because the lower brackets tax earlier dollars at lower rates. When people ask 'what tax bracket am I in,' they usually mean the marginal rate. See IRS Publication 17.",
+    "metadata": {"source": "IRS Publication 17", "section": "How Tax Is Figured", "topic": "tax_brackets", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-agi-vs-taxable",
+    "text": "Adjusted gross income (AGI) is your total income minus specific adjustments such as retirement contributions and student loan interest. Taxable income is your AGI minus your standard or itemized deduction and any qualified business income deduction. Your tax is calculated on taxable income, not AGI. See Form 1040 and IRS Publication 17.",
+    "metadata": {"source": "IRS Publication 17", "section": "AGI and Taxable Income", "topic": "income", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-refund-calculation",
+    "text": "Your refund or balance due is the difference between what you already paid and your total tax. Add up your withholding (from W-2 box 2 and 1099s), estimated payments, and refundable credits, then subtract your total tax. If payments exceed the tax, you get a refund; if not, you owe the difference. See Form 1040, lines 24 through 37.",
+    "metadata": {"source": "IRS Form 1040 Instructions", "section": "Refund or Amount You Owe", "topic": "refund", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-withholding-w4",
+    "text": "Withholding is the tax your employer takes from each paycheck based on the Form W-4 you filled out, and it is reported in box 2 of your W-2. If too much is withheld you get a refund; if too little, you owe. You can adjust your W-4 at any time to change how much is withheld. See IRS Publication 505.",
+    "metadata": {"source": "IRS Publication 505", "section": "Tax Withholding", "topic": "withholding", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-why-large-refund",
+    "text": "A large refund usually means you had more tax withheld from your paychecks during the year than your final tax bill required, so the IRS returns the difference. It is your own money coming back, not a bonus. If you would rather have it during the year, you can reduce your withholding by updating your Form W-4. See IRS Publication 505.",
+    "metadata": {"source": "IRS Publication 505", "section": "Over-withholding", "topic": "withholding", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-estimated-tax-safe-harbor",
+    "text": "If you have income without withholding (self-employment, investments), you generally pay quarterly estimated taxes. You avoid an underpayment penalty under the safe harbor if you pay at least 90% of this year's tax or 100% of last year's tax (110% if your prior-year AGI was over one hundred fifty thousand dollars). See IRS Form 1040-ES and Publication 505.",
+    "metadata": {"source": "IRS Publication 505", "section": "Estimated Tax Safe Harbor", "topic": "estimated_tax", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-underpayment-penalty",
+    "text": "If you did not pay enough tax during the year through withholding or estimated payments, the IRS may charge an underpayment penalty, computed on Form 2210. The penalty is essentially interest on the shortfall for the period it was unpaid. Meeting the safe-harbor amounts avoids it. See IRS Form 2210 instructions.",
+    "metadata": {"source": "IRS Form 2210 Instructions", "section": "Underpayment Penalty", "topic": "penalties", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-capital-gains-short-vs-long",
+    "text": "A capital gain is short-term if you held the asset one year or less, and long-term if you held it more than one year. Short-term gains are taxed at your ordinary income rates, while long-term gains get lower preferential rates. Holding past the one-year mark can substantially cut the tax on a sale. See IRS Publication 550 and Schedule D.",
+    "metadata": {"source": "IRS Publication 550", "section": "Capital Gains Holding Period", "topic": "capital_gains", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-ltcg-rates-2025",
+    "text": "For 2025, long-term capital gains and qualified dividends are taxed at 0% while your taxable income stays under $48,350 (Single) or $96,700 (Married Filing Jointly); 15% up to $533,400 (Single) or $600,050 (MFJ); and 20% above those amounts. Source: IRS Rev. Proc. 2024-40.",
+    "metadata": {"source": "IRS Rev. Proc. 2024-40", "section": "Long-Term Capital Gains Rates", "topic": "capital_gains", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-capital-loss",
+    "text": "Capital losses first offset capital gains. If your losses exceed your gains, you can deduct up to three thousand dollars of the net loss against ordinary income per year (fifteen hundred if Married Filing Separately), and carry the rest forward to future years. See IRS Schedule D instructions.",
+    "metadata": {"source": "IRS Schedule D Instructions", "section": "Capital Loss Limit and Carryover", "topic": "capital_gains", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-wash-sale",
+    "text": "The wash-sale rule disallows a loss if you buy the same or a substantially identical security within 30 days before or after selling it at a loss. The disallowed loss is added to the basis of the new shares. This matters for tax-loss harvesting. See IRS Publication 550.",
+    "metadata": {"source": "IRS Publication 550", "section": "Wash Sales", "topic": "capital_gains", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-qualified-dividends",
+    "text": "Qualified dividends are taxed at the same low long-term capital gains rates (0, 15, or 20 percent) rather than ordinary rates, if you held the stock long enough. Ordinary (non-qualified) dividends are taxed as regular income. Your 1099-DIV reports both amounts. See IRS Publication 550.",
+    "metadata": {"source": "IRS Publication 550", "section": "Qualified Dividends", "topic": "investment_income", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-niit",
+    "text": "The Net Investment Income Tax adds 3.8% on investment income (interest, dividends, capital gains, rents) when your modified adjusted gross income exceeds two hundred thousand dollars (Single) or two hundred fifty thousand dollars (Married Filing Jointly). It is computed on Form 8960. See IRS Form 8960 instructions.",
+    "metadata": {"source": "IRS Form 8960 Instructions", "section": "Net Investment Income Tax", "topic": "investment_income", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-child-tax-credit-2025",
+    "text": "The Child Tax Credit is two thousand dollars for each qualifying child under age 17 for 2025, with up to one thousand seven hundred dollars refundable as the Additional Child Tax Credit. It begins to phase out when modified AGI exceeds two hundred thousand dollars (four hundred thousand for Married Filing Jointly). See IRS Schedule 8812.",
+    "metadata": {"source": "IRS Schedule 8812", "section": "Child Tax Credit", "topic": "credits", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-credit-other-dependents",
+    "text": "The Credit for Other Dependents is a nonrefundable five hundred dollar credit for dependents who do not qualify for the Child Tax Credit, such as older children or dependent parents. It phases out at the same income levels as the Child Tax Credit. See IRS Schedule 8812.",
+    "metadata": {"source": "IRS Schedule 8812", "section": "Credit for Other Dependents", "topic": "credits", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-eitc-2025",
+    "text": "The Earned Income Tax Credit is a refundable credit for low-to-moderate-income workers. For 2025 the maximum is about $649 with no children, $4,328 with one child, $7,152 with two, and $8,046 with three or more. Investment income must be under eleven thousand nine hundred fifty dollars. Source: IRS Rev. Proc. 2024-40.",
+    "metadata": {"source": "IRS Rev. Proc. 2024-40", "section": "Earned Income Tax Credit", "topic": "credits", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-aotc",
+    "text": "The American Opportunity Tax Credit is up to two thousand five hundred dollars per student for the first four years of college, and 40% of it (up to one thousand dollars) is refundable. It phases out between eighty and ninety thousand dollars of modified AGI (one hundred sixty to one hundred eighty thousand for Married Filing Jointly). See IRS Form 8863 and Publication 970.",
+    "metadata": {"source": "IRS Publication 970", "section": "American Opportunity Credit", "topic": "credits", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-llc-credit",
+    "text": "The Lifetime Learning Credit is up to two thousand dollars per return (20% of up to ten thousand dollars of tuition) for any year of post-secondary or job-skill education. It is nonrefundable and phases out over the same income range as the American Opportunity Credit. You cannot claim both credits for the same student in the same year. See IRS Publication 970.",
+    "metadata": {"source": "IRS Publication 970", "section": "Lifetime Learning Credit", "topic": "credits", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-qbi-199a",
+    "text": "The Qualified Business Income deduction lets eligible owners of pass-through businesses (sole proprietors, partnerships, S corporations) deduct up to 20% of their qualified business income. Above taxable income of about one hundred ninety-seven thousand three hundred dollars (Single) or three hundred ninety-four thousand six hundred dollars (MFJ) for 2025, limitations and service-business rules apply. See IRS Form 8995 and IRC Section 199A.",
+    "metadata": {"source": "IRC Section 199A", "section": "Qualified Business Income Deduction", "topic": "deductions", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-ira-2025",
+    "text": "For 2025 you can contribute up to seven thousand dollars to a traditional or Roth IRA, or eight thousand dollars if you are 50 or older. Traditional IRA deductibility and Roth eligibility phase out at higher incomes. Contributions for 2025 can be made until the April 2026 filing deadline. See IRS Publication 590-A.",
+    "metadata": {"source": "IRS Publication 590-A", "section": "IRA Contribution Limits", "topic": "retirement", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-401k-2025",
+    "text": "For 2025 the employee 401(k) contribution limit is twenty-three thousand five hundred dollars, plus a seven thousand five hundred dollar catch-up at age 50 or older. Under SECURE 2.0, those aged 60 to 63 get a higher catch-up of eleven thousand two hundred fifty dollars. Pre-tax contributions lower your taxable income. See IRS Notice 2024-80.",
+    "metadata": {"source": "IRS Notice 2024-80", "section": "401(k) Elective Deferral Limit", "topic": "retirement", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-hsa-2025",
+    "text": "For 2025 the Health Savings Account contribution limit is four thousand three hundred dollars for self-only coverage and eight thousand five hundred fifty dollars for family coverage, with an extra one thousand dollars at age 55 or older. HSA contributions are deductible and you must have a qualifying high-deductible health plan. See IRS Publication 969.",
+    "metadata": {"source": "IRS Publication 969", "section": "HSA Contribution Limits", "topic": "deductions", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-saver-credit",
+    "text": "The Saver's Credit (Retirement Savings Contributions Credit) gives lower-income taxpayers a credit of 10, 20, or 50 percent of up to two thousand dollars contributed to a retirement account (four thousand if Married Filing Jointly). It is nonrefundable and phases out at modest income levels. See IRS Form 8880.",
+    "metadata": {"source": "IRS Form 8880", "section": "Saver's Credit", "topic": "credits", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-w2-box-guide",
+    "text": "On your W-2, box 1 is your taxable wages, box 2 is the federal income tax withheld, boxes 3 through 6 cover Social Security and Medicare wages and taxes, box 17 is state income tax withheld, and box 12 holds coded items like 401(k) contributions. The numbers on your return come from these boxes. See IRS General Instructions for Forms W-2 and W-3.",
+    "metadata": {"source": "IRS W-2 Instructions", "section": "W-2 Box Guide", "topic": "forms", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-1099-types",
+    "text": "Common 1099 forms report income without withholding: 1099-NEC for contractor pay, 1099-INT for interest, 1099-DIV for dividends, 1099-B for brokerage sales and capital gains, 1099-R for retirement distributions, and 1099-K for payment-app or card receipts. Each is also sent to the IRS, so amounts should match your return. See IRS Publication 17.",
+    "metadata": {"source": "IRS Publication 17", "section": "Information Returns (1099s)", "topic": "forms", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-amt-overview",
+    "text": "The Alternative Minimum Tax is a parallel calculation that limits certain deductions to ensure higher-income taxpayers pay a minimum amount. You compute it on Form 6251 and pay the higher of regular tax or AMT. For 2025 the AMT exemption is larger and phases out at high income, so most middle-income filers are not affected. See IRS Form 6251 instructions.",
+    "metadata": {"source": "IRS Form 6251 Instructions", "section": "Alternative Minimum Tax", "topic": "amt", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "fed-tax-deadline-2025",
+    "text": "The federal filing deadline for a 2025 tax return is generally April 15, 2026. You can request an automatic six-month extension to file (to October 2026), but an extension to file is not an extension to pay; any tax owed is still due in April to avoid interest and penalties. See IRS Form 4868.",
+    "metadata": {"source": "IRS Form 4868", "section": "Filing Deadline and Extensions", "topic": "filing", "jurisdiction": "federal", "tax_year": "2025"}
+  },
+  {
+    "id": "multistate-residency-types",
+    "text": "For state taxes you are a resident, part-year resident, or nonresident. Residents are taxed on all income; part-year residents on income earned while living in the state plus state-source income; nonresidents only on income sourced to that state. Moving during the year or working across state lines is what creates a multi-state return. See state revenue department instructions.",
+    "metadata": {"source": "Multi-state Tax Principles", "section": "Residency Status", "topic": "multistate", "jurisdiction": "multistate", "tax_year": "2025"}
+  },
+  {
+    "id": "multistate-resident-credit",
+    "text": "To prevent the same income from being taxed twice, your resident state usually gives you a credit for income tax you paid to another state on income earned there. You file a nonresident return in the state where you earned the income, then claim the resident credit on your home-state return. The credit is generally limited to the lesser of the two states' tax on that income.",
+    "metadata": {"source": "Multi-state Tax Principles", "section": "Credit for Taxes Paid to Other States", "topic": "multistate", "jurisdiction": "multistate", "tax_year": "2025"}
+  },
+  {
+    "id": "multistate-sourcing",
+    "text": "Income is sourced to the state where it is earned: wages to where the work is performed, business income by apportionment, and rental or property income to where the property sits. Investment income is generally taxed by your state of residence. Sourcing rules decide which state gets to tax each dollar on a multi-state return.",
+    "metadata": {"source": "Multi-state Tax Principles", "section": "Income Sourcing", "topic": "multistate", "jurisdiction": "multistate", "tax_year": "2025"}
+  },
+  {
+    "id": "multistate-when-two-returns",
+    "text": "You typically file two state returns when you moved between states during the year, lived in one state but worked in another, or earned income (such as rental or business income) in a state where you do not live. Each state taxes its share, and the resident credit prevents double taxation. Nine states, including Texas and Florida, have no state income tax.",
+    "metadata": {"source": "Multi-state Tax Principles", "section": "When to File Multiple States", "topic": "multistate", "jurisdiction": "multistate", "tax_year": "2025"}
+  },
+  {
+    "id": "ca-brackets-2025",
+    "text": "California has progressive income tax rates from 1% up to 12.3%, plus an additional 1% Mental Health Services Tax on taxable income over one million dollars, for a top rate of 13.3%. California taxes are reported on Form 540 (residents) and administered by the Franchise Tax Board. See California FTB Form 540 instructions.",
+    "metadata": {"source": "California FTB Form 540 Instructions", "section": "California Tax Rates", "topic": "state_tax", "jurisdiction": "CA", "tax_year": "2025"}
+  },
+  {
+    "id": "ca-capital-gains-ordinary",
+    "text": "California does not give a preferential rate for long-term capital gains or qualified dividends; it taxes all capital gains as ordinary income at the regular state rates up to 13.3%. This is why a stock sale can carry a low federal rate but a high California rate. See California FTB Schedule D (540).",
+    "metadata": {"source": "California FTB Schedule D (540)", "section": "California Capital Gains", "topic": "state_tax", "jurisdiction": "CA", "tax_year": "2025"}
+  },
+  {
+    "id": "ca-standard-deduction",
+    "text": "California's standard deduction is much smaller than the federal one, around five thousand five hundred forty dollars for Single or Married Filing Separately and about eleven thousand eighty dollars for Married Filing Jointly, Head of Household, and Qualifying Surviving Spouse in recent years; confirm the exact 2025 figure with the FTB. California also has its own itemized deduction rules. See California FTB Form 540 instructions.",
+    "metadata": {"source": "California FTB Form 540 Instructions", "section": "California Standard Deduction", "topic": "state_tax", "jurisdiction": "CA", "tax_year": "2025"}
+  },
+  {
+    "id": "ca-part-year-nonresident-540nr",
+    "text": "Part-year residents and nonresidents of California file Form 540NR. California first figures tax as if all your income were California income, then prorates it by the share that is actually California-source. So California-source income effectively sets your California rate even if you live elsewhere part of the year. See California FTB Form 540NR instructions.",
+    "metadata": {"source": "California FTB Form 540NR Instructions", "section": "Part-Year and Nonresident (540NR)", "topic": "state_tax", "jurisdiction": "CA", "tax_year": "2025"}
+  },
+  {
+    "id": "ca-sdi",
+    "text": "California withholds State Disability Insurance (SDI) from wages, shown separately on your W-2. As of 2024 the wage cap was removed, so SDI applies to all California wages. SDI is not income tax, but if you had two employers and too much was withheld you may claim the excess on Form 540. See California FTB and EDD guidance.",
+    "metadata": {"source": "California EDD / FTB", "section": "State Disability Insurance", "topic": "state_tax", "jurisdiction": "CA", "tax_year": "2025"}
+  },
+  {
+    "id": "mn-brackets-2025",
+    "text": "Minnesota has progressive income tax rates of 5.35%, 6.8%, 7.85%, and a top rate of 9.85%. Residents file Form M1 with the Minnesota Department of Revenue. Minnesota starts from federal adjusted gross income and applies its own additions, subtractions, and brackets. See Minnesota DOR Form M1 instructions.",
+    "metadata": {"source": "Minnesota DOR Form M1 Instructions", "section": "Minnesota Tax Rates", "topic": "state_tax", "jurisdiction": "MN", "tax_year": "2025"}
+  },
+  {
+    "id": "mn-capital-gains-ordinary",
+    "text": "Minnesota does not give a preferential rate for long-term capital gains; it taxes them as ordinary income at rates up to 9.85%. Minnesota also adds a 1% tax on net investment income above one million dollars. So a stock sale can carry a low federal rate but a notably higher Minnesota rate. See Minnesota DOR Form M1 instructions.",
+    "metadata": {"source": "Minnesota DOR Form M1 Instructions", "section": "Minnesota Capital Gains", "topic": "state_tax", "jurisdiction": "MN", "tax_year": "2025"}
+  },
+  {
+    "id": "mn-standard-deduction",
+    "text": "Minnesota has its own standard deduction, close to the federal amounts (roughly fourteen to fifteen thousand dollars for Single and twice that for Married Filing Jointly in recent years), but it phases out for high earners; confirm the exact 2025 figure with the Minnesota Department of Revenue. Minnesota makes its own itemize-or-standard choice separate from your federal return. See Minnesota DOR Form M1 instructions.",
+    "metadata": {"source": "Minnesota DOR Form M1 Instructions", "section": "Minnesota Standard Deduction", "topic": "state_tax", "jurisdiction": "MN", "tax_year": "2025"}
+  },
+  {
+    "id": "mn-part-year-nonresident-m1nr",
+    "text": "Part-year residents and nonresidents of Minnesota file Schedule M1NR with Form M1. Minnesota figures tax on all of your income, then prorates it by the share that is Minnesota-source, so your total income influences the rate applied to the Minnesota portion. This is how Minnesota taxes income you earned there while living elsewhere. See Minnesota DOR Schedule M1NR instructions.",
+    "metadata": {"source": "Minnesota DOR Schedule M1NR Instructions", "section": "Part-Year and Nonresident (M1NR)", "topic": "state_tax", "jurisdiction": "MN", "tax_year": "2025"}
+  },
+  {
+    "id": "mn-subtractions-credits",
+    "text": "Minnesota offers subtractions and credits that can lower your tax, including a Social Security benefits subtraction, the K-12 Education Credit and Subtraction, and the Working Family Credit (Minnesota's version of the Earned Income Tax Credit). Eligibility and amounts depend on income. See Minnesota DOR Form M1 instructions.",
+    "metadata": {"source": "Minnesota DOR Form M1 Instructions", "section": "Minnesota Subtractions and Credits", "topic": "state_tax", "jurisdiction": "MN", "tax_year": "2025"}
+  },
+  {
+    "id": "ut-flat-rate-2025",
+    "text": "Utah taxes income at a single flat rate of about 4.5% for 2025 (the rate has been lowered slightly in recent years); confirm the exact current rate with the Utah State Tax Commission. Because the rate is flat, your marginal and effective Utah rates are essentially the same. Residents file Form TC-40. See Utah State Tax Commission TC-40 instructions.",
+    "metadata": {"source": "Utah State Tax Commission TC-40 Instructions", "section": "Utah Flat Tax Rate", "topic": "state_tax", "jurisdiction": "UT", "tax_year": "2025"}
+  },
+  {
+    "id": "ut-taxpayer-credit",
+    "text": "Utah does not use a traditional standard deduction. Instead it gives a taxpayer tax credit equal to a percentage of your federal deductions and exemptions, which phases out as income rises. Higher earners get little or none of this credit, so they effectively pay close to the full flat rate. See Utah State Tax Commission TC-40 instructions.",
+    "metadata": {"source": "Utah State Tax Commission TC-40 Instructions", "section": "Utah Taxpayer Tax Credit", "topic": "state_tax", "jurisdiction": "UT", "tax_year": "2025"}
+  },
+  {
+    "id": "ut-capital-gains-flat",
+    "text": "Utah taxes all income, including long-term capital gains and qualified dividends, at its single flat rate; there is no preferential rate for investment income. Utah does offer a limited capital gains tax credit for gains reinvested in certain Utah small businesses. See Utah State Tax Commission TC-40 instructions.",
+    "metadata": {"source": "Utah State Tax Commission TC-40 Instructions", "section": "Utah Capital Gains", "topic": "state_tax", "jurisdiction": "UT", "tax_year": "2025"}
+  },
+  {
+    "id": "ut-part-year-nonresident-tc40b",
+    "text": "Part-year residents and nonresidents of Utah file Schedule TC-40B. Utah calculates tax on all of your income and then apportions it by the share that is Utah-source. This determines how much of your income Utah taxes when you lived there only part of the year or earned Utah income while living elsewhere. See Utah State Tax Commission TC-40B instructions.",
+    "metadata": {"source": "Utah State Tax Commission TC-40B Instructions", "section": "Part-Year and Nonresident (TC-40B)", "topic": "state_tax", "jurisdiction": "UT", "tax_year": "2025"}
+  },
+  {
+    "id": "ut-retirement-ss-credit",
+    "text": "Utah offers a Social Security benefits credit and a retirement credit that reduce tax for eligible taxpayers, both of which phase out above income thresholds. These help offset Utah's flat tax for retirees and lower-income filers. See Utah State Tax Commission TC-40 instructions.",
+    "metadata": {"source": "Utah State Tax Commission TC-40 Instructions", "section": "Utah Retirement and Social Security Credits", "topic": "state_tax", "jurisdiction": "UT", "tax_year": "2025"}
+  }
+]
