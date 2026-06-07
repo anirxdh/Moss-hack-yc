@@ -99,7 +99,7 @@ year 2025**:
 - `8` additional income (Schedule 1) = 0 (v1)
 - `9` total income = 1a + 2b + 3b + 7 + 8
 - `10` adjustments = 0 (v1) → `11` AGI = 9 − 10
-- `12` standard deduction by filing status (2025): Single/MFS **$15,000**, MFJ **$30,000**, HoH **$22,500**
+- `12` standard deduction by filing status (2025): Single/MFS **$15,750**, MFJ **$31,500**, HoH **$23,625** (One Big Beautiful Bill Act amounts, as printed on the 2025 Form 1040 — not the earlier $15,000/$30,000/$22,500 projection)
 - `13` QBI = 0 → `14` = 12 + 13
 - `15` taxable income = max(0, 11 − 14)
 - `16` tax = `taxFromBrackets(15, filingStatus)` (2025 ordinary brackets)

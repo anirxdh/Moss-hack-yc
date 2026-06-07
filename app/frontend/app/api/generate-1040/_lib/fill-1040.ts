@@ -27,7 +27,7 @@ function amountFields(f: Form1040): [string, number][] {
     [`${P2}f2_10[0]`, f.line16], // 18 (= 16; line 17 = 0)
     [`${P2}f2_14[0]`, f.line16], // 22 (= 16; lines 19–21 = 0)
     [`${P2}f2_16[0]`, f.line24], // 24 total tax
-    [`${P2}f2_20[0]`, f.line25d], // 25d total withholding
+    [`${P2}f2_20[0]`, f.line25d], // 25d total withholding (25a–25c sub-lines omitted; 25d drives the math)
     [`${P2}f2_29[0]`, f.line33], // 33 total payments
     [`${P2}f2_30[0]`, f.line34], // 34 overpayment
     [`${P2}f2_31[0]`, f.line34], // 35a refund (= 34)
@@ -45,7 +45,10 @@ const FILING_STATUS_XY: Record<FilingStatus, [number, number]> = {
   head_of_household: [350, 578],
 };
 
-const money = (n: number): string => (n > 0 ? n.toLocaleString('en-US') : '');
+// 0 -> blank (IRS norm). Negatives (e.g. a capital loss on line 7, or a
+// negative total income) render in parentheses, the IRS convention — never blank.
+const money = (n: number): string =>
+  n === 0 ? '' : n < 0 ? `(${Math.abs(n).toLocaleString('en-US')})` : n.toLocaleString('en-US');
 
 export async function fillForm1040(form1040: Form1040): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.load(await readFile(TEMPLATE));

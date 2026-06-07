@@ -30,10 +30,10 @@ const inputs = (over: Partial<TaxInputs>): TaxInputs => ({
 });
 
 describe('standardDeduction (2025)', () => {
-  it('single = 15000', () => expect(standardDeduction('single')).toBe(15000));
-  it('married_joint = 30000', () => expect(standardDeduction('married_joint')).toBe(30000));
-  it('head_of_household = 22500', () => expect(standardDeduction('head_of_household')).toBe(22500));
-  it('married_separate = 15000', () => expect(standardDeduction('married_separate')).toBe(15000));
+  it('single = 15750', () => expect(standardDeduction('single')).toBe(15750));
+  it('married_joint = 31500', () => expect(standardDeduction('married_joint')).toBe(31500));
+  it('head_of_household = 23625', () => expect(standardDeduction('head_of_household')).toBe(23625));
+  it('married_separate = 15750', () => expect(standardDeduction('married_separate')).toBe(15750));
 });
 
 describe('taxFromBrackets (2025, single)', () => {
@@ -74,17 +74,17 @@ describe('computeForm1040', () => {
     const f = computeForm1040(inputs({ wages: 50000, fedWithholding: 4000 }));
     expect(f.line9).toBe(50000);
     expect(f.line11).toBe(50000);
-    expect(f.line12).toBe(15000);
-    expect(f.line15).toBe(35000);
-    expect(f.line16).toBe(3962); // 1192.5 + .12*23075 = 3961.5 -> round
+    expect(f.line12).toBe(15750);
+    expect(f.line15).toBe(34250); // 50000 - 15750
+    expect(f.line16).toBe(3872); // 1192.5 + .12*22325 = 3871.5 -> round
     expect(f.line25d).toBe(4000);
-    expect(f.refundOrOwe).toEqual({ type: 'refund', amount: 38 });
+    expect(f.refundOrOwe).toEqual({ type: 'refund', amount: 128 });
   });
   it('higher income -> owe', () => {
     const f = computeForm1040(inputs({ wages: 90000, fedWithholding: 5000 }));
-    expect(f.line15).toBe(75000);
-    expect(f.line16).toBe(11414); // 1192.5 + .12*36550 + .22*26525
-    expect(f.refundOrOwe).toEqual({ type: 'owe', amount: 6414 });
+    expect(f.line15).toBe(74250); // 90000 - 15750
+    expect(f.line16).toBe(11249); // 1192.5 + .12*36550 + .22*25775 = 11249.0
+    expect(f.refundOrOwe).toEqual({ type: 'owe', amount: 6249 });
   });
   it('zero income -> even', () => {
     const f = computeForm1040(inputs({}));

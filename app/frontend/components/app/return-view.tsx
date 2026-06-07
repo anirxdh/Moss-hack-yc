@@ -5,6 +5,7 @@ import { useTheme } from 'next-themes';
 import { useRouter } from 'next/navigation';
 import { useSessionContext } from '@livekit/components-react';
 import type { AppConfig } from '@/app-config';
+import type { Form1040Summary } from '@/app/api/generate-1040/_lib/schema';
 import { AgentSessionView_01 } from '@/components/agents-ui/blocks/agent-session-view-01';
 import { Button } from '@/components/ui/button';
 
@@ -13,11 +14,7 @@ interface ReturnViewProps {
 }
 
 interface GeneratedReturn {
-  summary: {
-    taxYear: number;
-    documentsRead: number;
-    refundOrOwe: { type: 'refund' | 'owe' | 'even'; amount: number };
-  };
+  summary: Form1040Summary;
   pdfUrl: string;
   warnings: string[];
 }

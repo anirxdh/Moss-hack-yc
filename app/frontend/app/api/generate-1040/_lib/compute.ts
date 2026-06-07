@@ -3,16 +3,19 @@ import type {
   ExtractionResult,
   FilingStatus,
   Form1040,
+  Form1040Summary,
   RefundOrOwe,
   TaxInputs,
 } from './schema';
 
-// 2025 standard deduction (Rev. Proc. 2024-40).
+// 2025 standard deduction — the One Big Beautiful Bill Act raised these above
+// the earlier Rev. Proc. 2024-40 projection; these match the amounts printed on
+// the 2025 Form 1040 itself ($15,750 / $31,500 / $23,625).
 const STANDARD_DEDUCTION_2025: Record<FilingStatus, number> = {
-  single: 15000,
-  married_separate: 15000,
-  married_joint: 30000,
-  head_of_household: 22500,
+  single: 15750,
+  married_separate: 15750,
+  married_joint: 31500,
+  head_of_household: 23625,
 };
 
 export function standardDeduction(status: FilingStatus): number {
@@ -145,5 +148,21 @@ export function computeForm1040(inp: TaxInputs): Form1040 {
     line34,
     line37,
     refundOrOwe,
+  };
+}
+
+export function summarize(f: Form1040, documentsRead: number): Form1040Summary {
+  return {
+    taxYear: f.taxYear,
+    filingStatus: f.filingStatus,
+    taxpayerName: f.taxpayerName,
+    totalIncome: f.line9,
+    adjustedGrossIncome: f.line11,
+    standardDeduction: f.line12,
+    taxableIncome: f.line15,
+    tax: f.line16,
+    totalPayments: f.line33,
+    refundOrOwe: f.refundOrOwe,
+    documentsRead,
   };
 }

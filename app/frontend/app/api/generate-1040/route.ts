@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
-import { aggregate, computeForm1040 } from './_lib/compute';
+import { aggregate, computeForm1040, summarize } from './_lib/compute';
 import { type UploadedDoc, extractDocuments } from './_lib/extract';
 import { fillForm1040 } from './_lib/fill-1040';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
-export const revalidate = 0;
 
 const MAX_FILES = 20;
 const MAX_BYTES = 15 * 1024 * 1024; // 15 MB/file
@@ -68,20 +67,7 @@ export async function POST(req: Request) {
     const form1040 = computeForm1040(inputs);
     const pdfBytes = await fillForm1040(form1040);
     const pdfBase64 = Buffer.from(pdfBytes).toString('base64');
-
-    const summary = {
-      taxYear: form1040.taxYear,
-      filingStatus: form1040.filingStatus,
-      taxpayerName: form1040.taxpayerName,
-      totalIncome: form1040.line9,
-      adjustedGrossIncome: form1040.line11,
-      standardDeduction: form1040.line12,
-      taxableIncome: form1040.line15,
-      tax: form1040.line16,
-      totalPayments: form1040.line33,
-      refundOrOwe: form1040.refundOrOwe,
-      documentsRead: result.documents.length,
-    };
+    const summary = summarize(form1040, result.documents.length);
 
     return NextResponse.json({ bypassed: false, summary, pdfBase64, warnings });
   } catch (err) {

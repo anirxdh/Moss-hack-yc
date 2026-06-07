@@ -78,3 +78,18 @@ export interface Form1040 {
   line37: number; // amount you owe
   refundOrOwe: RefundOrOwe;
 }
+
+// At-a-glance summary returned to the client (shared by the route and the UI).
+export interface Form1040Summary {
+  taxYear: 2025;
+  filingStatus: FilingStatus;
+  taxpayerName: string | null;
+  totalIncome: number;
+  adjustedGrossIncome: number;
+  standardDeduction: number;
+  taxableIncome: number;
+  tax: number;
+  totalPayments: number;
+  refundOrOwe: RefundOrOwe;
+  documentsRead: number;
+}
