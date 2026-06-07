@@ -28,29 +28,26 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllGlobals());
 
-// Route each call by URL so the three-step flow is explicit.
-function wire({
-  presign = res(true, PRESIGN),
-  s3 = res(true),
-  complete = res(true, { job_id: 'job_1' }),
-} = {}) {
+// Route each call by URL so the two-step flow is explicit.
+function wire({ presign = res(true, PRESIGN), s3 = res(true) } = {}) {
   fetchMock.mockImplementation((url: string) => {
     if (url.includes('/api/uploads/presign')) return Promise.resolve(presign);
     if (url === PRESIGN.url) return Promise.resolve(s3);
-    if (url.includes('/api/uploads/complete')) return Promise.resolve(complete);
     throw new Error(`unexpected fetch: ${url}`);
   });
 }
 
 describe('uploadFile', () => {
-  it('presigns, posts to S3, completes, and returns the job id', async () => {
+  it('presigns, posts to S3, and returns the object key', async () => {
     wire();
     const result = await uploadFile('w2', file());
-    expect(result).toEqual({ docId: 'w2', key: PRESIGN.key, jobId: 'job_1' });
+    expect(result).toEqual({ docId: 'w2', key: PRESIGN.key });
     // S3 POST must send multipart with the file part last.
     const s3Call = fetchMock.mock.calls.find((c) => c[0] === PRESIGN.url)!;
     expect(s3Call[1].method).toBe('POST');
     expect(s3Call[1].body).toBeInstanceOf(FormData);
+    // No ingest/complete call — parsing now happens at generate time.
+    expect(fetchMock.mock.calls.some((c) => String(c[0]).includes('/complete'))).toBe(false);
   });
 
   it('throws if presign fails', async () => {
@@ -61,11 +58,6 @@ describe('uploadFile', () => {
   it('throws if the S3 upload fails', async () => {
     wire({ s3: res(false, '', 403) });
     await expect(uploadFile('w2', file())).rejects.toThrow(/storage failed \(403\)/);
-  });
-
-  it('throws if completion (ingest trigger) fails', async () => {
-    wire({ complete: res(false, 'Ingest trigger failed', 502) });
-    await expect(uploadFile('w2', file())).rejects.toThrow(/Ingest trigger failed/);
   });
 });
 
@@ -81,7 +73,6 @@ describe('uploadAll', () => {
         // Fail the second file's S3 upload.
         return Promise.resolve(uploadAllState.failNextS3 ? res(false, '', 500) : res(true));
       }
-      if (url.includes('/api/uploads/complete')) return Promise.resolve(res(true, { job_id: 'j' }));
       throw new Error(`unexpected: ${url}`);
     });
 

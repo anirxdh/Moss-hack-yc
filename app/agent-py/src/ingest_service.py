@@ -1,24 +1,25 @@
-"""FastAPI ingest service for the AI-CPA document-upload pipeline.
+"""FastAPI ingest service for the AI-CPA document pipeline.
 
-The Next.js frontend uploads a PDF directly to S3 (presigned POST), then calls
-``POST /ingest`` here with the object key. We download the object and run the
-existing Unsiloed -> Moss pipeline (``ingest_tax.ingest_pdf``) in a background
-task, so the slow (up to ~30 min) parse never blocks the HTTP request — the
-route returns ``202 Accepted`` immediately with a ``job_id``.
+``POST /ingest`` takes an S3 object key, downloads it, and runs the Unsiloed ->
+Moss pipeline (``ingest_tax.ingest_pdf``) in a background task so the slow (up to
+~30 min) parse never blocks the request — it returns ``202 Accepted`` with a
+``job_id`` that ``GET /ingest/status/{job_id}`` reports on.
 
-    Next /api/uploads/complete  --(X-Ingest-Secret)-->  POST /ingest  -> 202
-                                                            |
-                                                            v  (background)
-                                          S3 get_object -> ingest_pdf -> Moss
+    POST /ingest  --(X-Ingest-Secret)-->  202 + job_id
+                       |
+                       v  (background)
+        S3 get_object -> ingest_pdf -> Moss `knowledge`
+
+(For the demo, the prepared 1040 is ingested via the CLI instead —
+``ingest_tax.py`` ``main`` -> ``ingest_pdf`` — and the frontend just shows it.)
 
 Trust boundary
 --------------
-``/ingest`` is callable ONLY by the Next server, authenticated with a shared
-secret (``X-Ingest-Secret`` must equal ``AGENT_INGEST_SECRET``). The browser
-never reaches this service and never supplies ``user_id`` — the Clerk-authed
-Next route does. Without this gate, anyone who could reach the service could
-ingest into another user's namespace and defeat the agent's per-user retrieval
-filter (``agent.py`` search_knowledge).
+``/ingest`` is callable only by a trusted server holding the shared secret
+(``X-Ingest-Secret`` must equal ``AGENT_INGEST_SECRET``); ``user_id`` comes from
+that caller, never the browser. Without this gate, anyone reaching the service
+could ingest into another user's namespace and defeat the agent's per-user
+retrieval filter (``agent.py`` search_knowledge).
 
 Privacy: never logs document text; only counts, ids, and status.
 """

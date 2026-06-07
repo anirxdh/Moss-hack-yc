@@ -76,6 +76,36 @@ def _disallow_interruptions(context: RunContext | None) -> None:
 # per-browser user_id via agent dispatch metadata.
 DEFAULT_USER_ID = "user_1"
 
+# Fail-closed sentinel: when a real dispatch carries metadata that is malformed
+# or missing user_id, we MUST NOT fall back to DEFAULT_USER_ID (that would serve
+# user_1's tax documents to an unknown caller). This sentinel matches no real
+# user, so the per-user retrieval filter returns nothing instead.
+UNVERIFIED_USER_ID = "__unverified__"
+
+
+def resolve_user_id(metadata: str | None) -> str:
+    """Resolve the caller's user_id from agent dispatch metadata, failing CLOSED.
+
+    - No metadata at all (None/empty) -> console/dev mode -> DEFAULT_USER_ID.
+    - Valid JSON with a non-empty ``user_id`` -> that id.
+    - Metadata present but invalid JSON, or missing/empty ``user_id`` -> a
+      sentinel that matches no real user's documents, so a misconfigured dispatch
+      retrieves NOTHING rather than another user's return.
+    """
+    if not metadata:
+        return DEFAULT_USER_ID
+    try:
+        meta = json.loads(metadata)
+    except (json.JSONDecodeError, TypeError):
+        logger.error("dispatch metadata was not valid JSON; refusing to guess user_id")
+        return UNVERIFIED_USER_ID
+    user_id = meta.get("user_id") if isinstance(meta, dict) else None
+    if not user_id or not isinstance(user_id, str):
+        logger.error("dispatch metadata had no usable user_id; refusing to guess")
+        return UNVERIFIED_USER_ID
+    return user_id
+
+
 # --- Voice (TTS) ---
 # TTS_PROVIDER selects the voice backend:
 #   - "minimax" (default): MiniMax, the sponsor voice. Uses the single-segment
@@ -694,16 +724,10 @@ async def my_agent(
     }
 
     # Identify the user from agent dispatch metadata. The frontend packs
-    # {"user_id": ...} into ctx.job.metadata; console mode has none, so we fall
-    # back to DEFAULT_USER_ID. Parsed before ctx.connect() to stay off the
-    # connection critical path.
-    user_id = DEFAULT_USER_ID
-    if ctx.job.metadata:
-        try:
-            meta = json.loads(ctx.job.metadata)
-            user_id = meta.get("user_id", DEFAULT_USER_ID)
-        except json.JSONDecodeError:
-            logger.warning("ctx.job.metadata was not valid JSON; using default user_id")
+    # {"user_id": ...} into ctx.job.metadata; console mode has none. Fails CLOSED
+    # (see resolve_user_id): a malformed/missing id never falls back to another
+    # user's data. Parsed before ctx.connect() to stay off the connection path.
+    user_id = resolve_user_id(ctx.job.metadata)
 
     logger.info("AI CPA: job received for room=%s (user_id=%s)", ctx.room.name, user_id)
 

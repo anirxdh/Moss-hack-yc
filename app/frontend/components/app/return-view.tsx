@@ -5,7 +5,6 @@ import { useTheme } from 'next-themes';
 import { useRouter } from 'next/navigation';
 import { useSessionContext } from '@livekit/components-react';
 import type { AppConfig } from '@/app-config';
-import type { Form1040Summary } from '@/app/api/generate-1040/_lib/schema';
 import { AgentSessionView_01 } from '@/components/agents-ui/blocks/agent-session-view-01';
 import { Button } from '@/components/ui/button';
 import { useMossContextEvents } from '@/hooks/useMossContextEvents';
@@ -14,50 +13,30 @@ interface ReturnViewProps {
   appConfig: AppConfig;
 }
 
-interface GeneratedReturn {
-  summary: Form1040Summary;
-  pdfUrl: string;
-  warnings: string[];
-}
-
-function headline(r: GeneratedReturn['summary']['refundOrOwe']): string {
-  if (r.type === 'refund') return `Estimated refund: $${r.amount.toLocaleString('en-US')}`;
-  if (r.type === 'owe') return `Estimated amount owed: $${r.amount.toLocaleString('en-US')}`;
-  return 'Estimated balance: $0';
-}
-
 export function ReturnView({ appConfig }: ReturnViewProps) {
   const router = useRouter();
   const { isConnected, start } = useSessionContext();
   const { resolvedTheme } = useTheme();
 
-  // Generated 1040 from the upload -> /api/generate-1040 flow, surfaced in the
-  // /return preview below.
-  const [generated, setGenerated] = useState<GeneratedReturn | null>(null);
-
+  // The CPA-prepared 1040 lives in S3 (manually placed, ingested into Moss by the
+  // local script). Fetch a short-lived presigned GET URL so the browser can load
+  // it into the PDF viewer — the same document the voice agent grounds on.
+  const [docUrl, setDocUrl] = useState<string | null>(null);
+  const [docError, setDocError] = useState(false);
   useEffect(() => {
-    const raw = sessionStorage.getItem('generated1040');
-    if (!raw) return;
-    let url: string | null = null;
-    try {
-      const { summary, pdfBase64, warnings } = JSON.parse(raw);
-      const bytes = Uint8Array.from(atob(pdfBase64), (c) => c.charCodeAt(0));
-      url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
-      setGenerated({ summary, pdfUrl: url, warnings: warnings ?? [] });
-    } catch {
-      /* ignore malformed payload */
-    }
+    let cancelled = false;
+    fetch('/api/return-doc')
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((d) => !cancelled && setDocUrl(typeof d?.url === 'string' ? d.url : null))
+      .catch(() => !cancelled && setDocError(true));
     return () => {
-      if (url) URL.revokeObjectURL(url);
+      cancelled = true;
     };
   }, []);
 
-  // Preview document: the generated 1040 if present, else the placeholder.
-  const previewSrc = generated?.pdfUrl ?? '/tax-return.pdf';
-
-  // Follow the agent: when it cites a chunk from the tax doc, jump the PDF to
-  // that chunk's page. Moss stores the page per chunk and the agent publishes it
-  // in the moss_context event, so the on-screen doc tracks what the CPA says.
+  // Follow the agent: when it cites a chunk from the 1040, jump the PDF to that
+  // chunk's page. Moss stores the page per chunk and the agent publishes it in
+  // the moss_context event, so the on-screen doc tracks what the CPA says.
   const mossEvents = useMossContextEvents();
   const citedPage = useMemo(() => {
     for (let i = mossEvents.length - 1; i >= 0; i--) {
@@ -67,26 +46,35 @@ export function ReturnView({ appConfig }: ReturnViewProps) {
     }
     return null;
   }, [mossEvents]);
-  const pdfSrc = citedPage ? `/tax-return.pdf#page=${citedPage}` : '/tax-return.pdf';
 
-  // Once the call is live, keep the tax document beside the live AI CPA
-  // (voice + Olivia avatar) instead of taking over the full screen.
+  // Presigned URLs already carry a query string; the #page fragment is read by
+  // the browser PDF viewer and appends cleanly after it.
+  const pdfSrc = docUrl ? `${docUrl}${citedPage ? `#page=${citedPage}` : ''}` : null;
+
+  // Once the call is live, keep the 1040 beside the live AI CPA (voice + Olivia
+  // avatar) instead of taking over the full screen.
   if (isConnected) {
     return (
-      <main className="grid h-svh grid-cols-2">
-        {/* Your tax document — beside the CPA, auto-scrolls to the cited page */}
+      <main className="grid h-svh grid-cols-1 lg:grid-cols-2">
+        {/* The 1040 — beside the CPA, auto-scrolls to the cited page */}
         <section className="bg-muted relative overflow-hidden border-r">
           {citedPage && (
             <div className="absolute top-3 left-3 z-10 rounded-full bg-black/75 px-3 py-1 text-xs font-medium text-white shadow">
               📄 Source · page {citedPage}
             </div>
           )}
-          <iframe
-            key={pdfSrc}
-            src={pdfSrc}
-            title="Your tax return"
-            className="absolute inset-0 h-full w-full bg-white"
-          />
+          {pdfSrc ? (
+            <iframe
+              key={pdfSrc}
+              src={pdfSrc}
+              title="Your 2025 tax return"
+              className="absolute inset-0 h-full w-full bg-white"
+            />
+          ) : (
+            <div className="text-muted-foreground absolute inset-0 grid place-items-center p-6 text-center text-sm">
+              {docError ? 'Could not load your tax document.' : 'Loading your tax document…'}
+            </div>
+          )}
         </section>
         {/* Live AI CPA: voice + Olivia avatar */}
         <AgentSessionView_01
@@ -118,35 +106,23 @@ export function ReturnView({ appConfig }: ReturnViewProps) {
       {/* 1040 preview */}
       <section className="order-2 lg:order-1">
         <h1 className="text-2xl font-bold tracking-tight">Your 2025 tax return</h1>
-        {generated ? (
-          <div className="mt-1">
-            <p className="text-sm font-medium">{headline(generated.summary.refundOrOwe)}</p>
-            <p className="text-muted-foreground mt-1 text-xs">
-              Draft estimate (tax year {generated.summary.taxYear}) computed from{' '}
-              {generated.summary.documentsRead} document
-              {generated.summary.documentsRead === 1 ? '' : 's'}.
-            </p>
-            {generated.warnings.length > 0 && (
-              <ul className="text-muted-foreground mt-2 list-disc pl-4 text-xs">
-                {generated.warnings.map((w, i) => (
-                  <li key={i}>{w}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-        ) : (
-          <p className="text-muted-foreground mt-1 text-sm">
-            Showing the document you uploaded. Your generated 1040 will replace this soon.
-          </p>
-        )}
+        <p className="text-muted-foreground mt-1 text-sm">
+          Your prepared Form 1040. Talk it through with your AI CPA on the right.
+        </p>
 
-        {/* Generated 1040 (or, before generation, the locally-served placeholder). */}
         <div className="bg-muted mt-4 overflow-hidden rounded-xl border p-2">
-          <iframe
-            src={previewSrc}
-            title="Your tax return"
-            className="h-[80vh] w-full rounded-md bg-white"
-          />
+          {pdfSrc ? (
+            <iframe
+              key={pdfSrc}
+              src={pdfSrc}
+              title="Your 2025 tax return"
+              className="h-[80vh] w-full rounded-md bg-white"
+            />
+          ) : (
+            <div className="text-muted-foreground grid h-[80vh] w-full place-items-center rounded-md text-center text-sm">
+              {docError ? 'Could not load your tax document.' : 'Loading your tax document…'}
+            </div>
+          )}
         </div>
 
         <button
@@ -163,7 +139,7 @@ export function ReturnView({ appConfig }: ReturnViewProps) {
         <div className="bg-card sticky top-24 rounded-xl border p-5 text-center">
           <h2 className="text-sm font-bold tracking-tight">Questions about your return?</h2>
           <p className="text-muted-foreground mt-1 text-xs">
-            Talk it through with your AI CPA — grounded in your documents.
+            Talk it through with your AI CPA — grounded in your documents and the tax code.
           </p>
           <Button
             size="lg"

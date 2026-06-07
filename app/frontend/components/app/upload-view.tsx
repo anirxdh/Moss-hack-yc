@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/shadcn/utils';
 import { type UploadStatus, uploadAll } from '@/lib/uploads';
 import { DocCategorySection } from './doc-category';
 import { DocSlot } from './doc-slot';
@@ -30,39 +31,12 @@ export function UploadView() {
   const doneCount = Object.values(statuses).filter((s) => s === 'done').length;
   const errorIds = Object.keys(errors);
 
-  // Generate the 1040 from the same documents. The endpoint reads the PDFs,
-  // computes the return, fills the official IRS 1040, uploads it to S3, and
-  // indexes it (via the existing ingest service) so the voice CPA can ground on
-  // it. Best-effort: a generation hiccup shouldn't block reaching /return.
-  async function generate1040() {
-    try {
-      const fd = new FormData();
-      for (const [id, file] of Object.entries(files)) {
-        fd.append('files', file);
-        fd.append('docIds', id);
-      }
-      const res = await fetch('/api/generate-1040', { method: 'POST', body: fd });
-      const data = await res.json();
-      if (!data?.bypassed && data?.pdfBase64) {
-        sessionStorage.setItem(
-          'generated1040',
-          JSON.stringify({
-            summary: data.summary,
-            pdfBase64: data.pdfBase64,
-            warnings: data.warnings ?? [],
-          })
-        );
-      } else {
-        sessionStorage.removeItem('generated1040');
-      }
-    } catch {
-      sessionStorage.removeItem('generated1040');
-    }
-  }
-
-  // Upload every picked document to S3 (which triggers background ingestion of
-  // the sources), then generate + index the 1040, then continue to the return.
-  // With nothing picked, just proceed.
+  // Upload every picked document to S3, then continue to /return — which shows
+  // the prepared 1040 (already in S3, ingested into Moss by the local script) for
+  // the user to talk through with the AI CPA. The upload is the real deal (the
+  // docs land in S3); "generate" itself is a placeholder for the demo — the
+  // return is pre-prepared, not computed from these uploads. Nothing picked? Just
+  // proceed.
   async function handleGenerate() {
     if (uploading) return;
     if (totalFiles === 0) {
@@ -81,16 +55,11 @@ export function UploadView() {
         }
       },
     });
-
-    // Keep the user here to retry if any source failed to upload.
-    if (Object.keys(failed).length > 0) {
-      setUploading(false);
-      return;
-    }
-
-    await generate1040();
-
     setUploading(false);
+
+    // Keep the user here to retry if any document failed to upload.
+    if (Object.keys(failed).length > 0) return;
+
     router.push('/return');
   }
 
@@ -167,7 +136,13 @@ export function UploadView() {
       {/* Sticky action bar */}
       <div className="border-foreground/10 bg-background/80 fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur-md">
         <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-4 px-6 py-4">
-          <span className="text-muted-foreground text-xs" aria-live="polite">
+          <span
+            className={cn(
+              'text-xs',
+              errorIds.length > 0 ? 'text-destructive' : 'text-muted-foreground'
+            )}
+            aria-live="polite"
+          >
             {uploading
               ? `Working ${doneCount}/${totalFiles}…`
               : errorIds.length > 0

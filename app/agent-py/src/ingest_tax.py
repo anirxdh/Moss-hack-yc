@@ -103,6 +103,17 @@ def poll_job(job_id: str, api_key: str) -> list[dict]:
     raise TimeoutError(f"parse polling timed out after {POLL_DEADLINE_S}s")
 
 
+def _chunk_text(ch: dict) -> str:
+    """Select one chunk's text: prefer its ``embed``, else join segment markdown."""
+    text = (ch.get("embed") or "").strip()
+    if text:
+        return text
+    segs = ch.get("segments") or []
+    return "\n".join(
+        (s.get("markdown") or s.get("content") or "").strip() for s in segs
+    ).strip()
+
+
 def chunks_to_docs(
     chunks: list[dict], user_id: str, doc_id: str, source: str
 ) -> list[DocumentInfo]:
@@ -122,12 +133,7 @@ def chunks_to_docs(
     """
     docs: list[DocumentInfo] = []
     for i, ch in enumerate(chunks):
-        text = (ch.get("embed") or "").strip()
-        if not text:
-            segs = ch.get("segments") or []
-            text = "\n".join(
-                (s.get("markdown") or s.get("content") or "").strip() for s in segs
-            ).strip()
+        text = _chunk_text(ch)
         if not text:
             continue
         segs = ch.get("segments") or []
@@ -186,13 +192,16 @@ async def ingest_pdf(
     if not Path(pdf_path).exists():
         raise FileNotFoundError(f"PDF not found: {pdf_path}")
 
+    # submit_parse/poll_job block (synchronous requests + a minutes-long sleep
+    # loop); off-load to a thread so the async event loop stays free to serve
+    # status polls while this background task parses.
     if resume_job:
         print(f"[1/3] Resuming existing Unsiloed job: {resume_job}")
-        chunks = poll_job(resume_job, api_key)
+        chunks = await asyncio.to_thread(poll_job, resume_job, api_key)
     else:
         print(f"[1/3] Parsing with Unsiloed: {Path(pdf_path).name}")
-        job_id = submit_parse(pdf_path, api_key)
-        chunks = poll_job(job_id, api_key)
+        job_id = await asyncio.to_thread(submit_parse, pdf_path, api_key)
+        chunks = await asyncio.to_thread(poll_job, job_id, api_key)
 
     docs = chunks_to_docs(chunks, user_id, doc_id, source)
     print(
