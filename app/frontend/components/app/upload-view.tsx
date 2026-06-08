@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/shadcn/utils';
@@ -9,9 +9,31 @@ import { DocCategorySection } from './doc-category';
 import { DocSlot } from './doc-slot';
 import { CORE_DOCS, OPTIONAL_CATEGORIES } from './tax-documents';
 
+// TEMP / DEMO: when true, the six common slots render as already uploaded and
+// "Generate 1040" skips the real upload and goes straight to /return (the
+// prepared return is already in S3 + Moss). Set to false to restore the normal
+// upload flow. Remove this block + its two uses to fully revert.
+const DEMO_PREFILL = true;
+
 export function UploadView() {
   const router = useRouter();
   const [files, setFiles] = useState<Record<string, File>>({});
+
+  // DEMO: pre-fill the six common slots so the screen reads as "already uploaded".
+  // Client-only (File is undefined during SSR); placeholder bytes only.
+  useEffect(() => {
+    if (!DEMO_PREFILL) return;
+    setFiles(
+      Object.fromEntries(
+        CORE_DOCS.map((d) => [
+          d.id,
+          new File([new Uint8Array([0x25, 0x50, 0x44, 0x46])], `${d.code}.pdf`, {
+            type: 'application/pdf',
+          }),
+        ])
+      )
+    );
+  }, []);
   // Per-slot upload status + a global "busy" flag for the action bar.
   const [statuses, setStatuses] = useState<Record<string, UploadStatus>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -39,6 +61,11 @@ export function UploadView() {
   // proceed.
   async function handleGenerate() {
     if (uploading) return;
+    // DEMO: the prepared return is already in S3 — skip the real upload.
+    if (DEMO_PREFILL) {
+      router.push('/return');
+      return;
+    }
     if (totalFiles === 0) {
       router.push('/return');
       return;
