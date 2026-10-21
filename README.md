@@ -1,5 +1,7 @@
 # Tax It Easy — a voice AI CPA that prepares *and explains* your tax return
 
+> **Write-up:** [Building a Voice CPA That Only Says What It Can Cite](https://anirudhvasudevan.com/blog/moss-voice-cpa-yc-hackathon/), the architecture, decisions and lessons. Built by [Anirudh Vasudevan](https://anirudhvasudevan.com/).
+
 > Upload your tax documents, get a prepared 1040, then **talk to a voice agent** that
 > walks you through every line — grounded in *your* filings and the actual US tax code,
 > never hallucinated.
